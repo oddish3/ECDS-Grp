@@ -1,14 +1,17 @@
 rm(list=ls())
+
 library(haven)
 library(dplyr)
 library(labelled)
 library(ggplot2)
 
+#data wrangling
+###############
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
 
-file_names <- list.files('C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls',
-                         pattern = 'indresp')
 
+file_names <- list.files('C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls',
+                         pattern = 'indresp.dta')
 # loop through the file names and read them in with read_dta, create a new variable for each data frame
 for (i in seq_along(file_names)) {
   assign(paste0("data", i), read_dta(file_names[i]))}
@@ -67,7 +70,7 @@ combined_data <- bind_rows(data_list)
 combined_data <- combined_data %>% filter(basrate >0)
 #&ovtrate>0 & fimnlabgrs_dv >0)
 
-save(combined_data, file = "combined_data.RData")
+#save(combined_data, file = "combined_data.RData")
 
 #data1$pay1 <- data1$a_basrate #basic pay hourly rate
 #data1$pay2 <- data1$a_ovtrate #overtime pay hourly rate 
@@ -80,7 +83,7 @@ istrtdaty <- years
 sc<- c(91.3, 92.6, 94.6, 96,98,99.3,100,101.9,103.7,105.5,107.7,114.1)
 deflator<- data.frame(istrtdaty,sc)
 save(deflator, file = "deflator.RData")
-
+#################
 
 
 rm(list=ls())
@@ -93,7 +96,8 @@ library(labelled)
 library(dplyr)
 library(haven)
 library(ggplot2)
-
+library(generics)
+#############
 combined_data$sex <- as.numeric(unclass(combined_data$sex))
 combined_data$dvage <- as.numeric(unclass(combined_data$dvage))
 combined_data$basrate <- as.numeric(unclass(combined_data$basrate))
@@ -104,34 +108,50 @@ combined_data$racel <- as.numeric(unclass(combined_data$racel))
 combined_data$jbstat <- as.numeric(unclass(combined_data$jbstat))
 combined_data$oprlg <- as.numeric(unclass(combined_data$oprlg))
 combined_data$jbft_dv <- as.numeric(unclass(combined_data$jbft_dv))
-
-
+#########
 
 #dv age unavial)  & racel >=0&oprlg >=0
 combined_data1 <-combined_data %>%  filter(dvage >=0 & istrtdaty >=0 &jbstat>=0 & sex %in% c("1","2") & basrate>0)
-                                           #& jbstat == 2 & jbft_dv %in% c("1","2"))
+#                                           & jbstat == 2 & jbft_dv %in% c("1","2"))
 #summary(combined_data1[-1])
 #class(combined_data1$sex)
 #attributes(combined_data1)
-combined_data.1 <- combined_data1 %>% filter(istrtdaty<2021)
-mean_income <- aggregate(combined_data.1$basrate, list(combined_data.1$istrtdaty), mean)
-plot(mean_income)
-#combined_data.1$basrate <- log(combined_data.1$basrate)
+combined_data.1 <- combined_data1 %>% filter(istrtdaty<2022)
 
-mean_income_sex1 <- aggregate(basrate ~ istrtdaty + sex, data = combined_data.1, mean)
-mean_income_sex11 <- aggregate(basrate ~ istrtdaty + sex + jbft_dv, data = combined_data.1, mean)
+mean_income_sex1 <- aggregate(basrate ~ istrtdaty + sex, data = combined_data.1 %>% filter(jbft_dv == 1), median) #PT
+mean_income_sex11 <- aggregate(basrate ~ istrtdaty + sex, data = combined_data.1 %>% filter(jbft_dv == 2), median) #FT
 #mean_income_sex2 <- aggregate(pay2 ~ istrtdaty + sex, data = combined_data.1, mean)
 #mean_income_sex3 <- aggregate(pay3 ~ istrtdaty + sex, data = combined_data.1, mean)
 #mean_income_sex1$lnpay1<-log(mean_income_sex1$pay1)
-
+mean_income_sex1$ratio <- mean_income_sex1$basrate[mean_income_sex1$sex==1]/mean_income_sex1$basrate[mean_income_sex1$sex==2]
+mean_income_sex11$ratio <- mean_income_sex11$basrate[mean_income_sex11$sex==1]/mean_income_sex11$basrate[mean_income_sex11$sex==2]
+scale = 14
 ggplot(mean_income_sex1, aes(x = istrtdaty, y = basrate, group = sex, color = factor(sex))) + 
-  geom_line() + scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
+  geom_line() + 
+  geom_line(aes(y = ratio*scale, color = "M/F Ratio")) + 
+  scale_y_continuous(sec.axis = sec_axis(~.*scale, name="M/F Ratio"))
+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  geom_vline(xintercept = 2017, linetype = 'dashed')+
+  scale_color_manual(values = c("black", "blue", "red"), labels = c("Male", "Female", "Ratio")) +
+  labs(title = "Median Gross Hourly Income (FT) by Year and Sex", x = "Year", y = "Mean Income") +
+  theme_bw()
+
+ggplot(mean_income_sex11, aes(x = istrtdaty, y = basrate, group = sex, color = factor(sex))) + 
+  geom_line() + 
+  geom_line(aes(y = ratio*scale, color = "M/F Ratio")) + 
+  scale_y_continuous(sec.axis = sec_axis(~.*scale, name="M/F Ratio"))
+
++ scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   geom_vline(xintercept = 2017, linetype = 'dashed')+
   scale_color_manual(values = c("black", "blue"), labels = c("Male", "Female")) +
-  labs(title = "Mean Gross Hourly Income (FT/PT) by Year and Sex", x = "Year", y = "Mean Income") +
+  labs(title = "Median Gross Hourly Income (PT) by Year and Sex", x = "Year", y = "Mean Income") +
   theme_bw()
 
+
+combined_data.1 <- combined_data1 %>% filter(jbft_dv == 1)
 years = unique(combined_data.1$istrtdaty)
 meandiffs <- numeric(length(years))
 for (i in years) {
@@ -140,6 +160,7 @@ for (i in years) {
 #mean(combined_data.1$basrate[combined_data.1$sex == 2 & combined_data.1$istrtdaty == 2009]) - mean(combined_data.1$basrate[combined_data.1$sex == 1  & combined_data.1$istrtdaty == 2009])
 meandiffs1<- data.frame(istrtdaty = years, meandiffs = meandiffs)
 
+#creating data 
 mean_income_sex1 <- left_join(mean_income_sex1,meandiffs1, by="istrtdaty")  
 mean_income_sex1<-left_join(mean_income_sex1, deflator, by="istrtdaty")
 mean_income_sex1 <- mean_income_sex1 %>%  mutate(Real=meandiffs/(sc/100))
@@ -150,12 +171,12 @@ ggplot(mean_income_sex1, aes(x = istrtdaty, y =abs(Real))) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   geom_vline(xintercept = 2017, linetype = 'dashed')+
   scale_color_manual(values = c("black", "blue"), labels = c("Male", "Female")) +
-  labs(title = "Mean Gender Pay Differential", x = "Year", y = "Difference in Mean Income") +
+  labs(title = "Median Gender Pay Differential", x = "Year", y = "Difference in Mean Income") +
   theme_minimal()
-## Estimate a model on a training sample of the data (first 8 years)
+
+## Estimate a model on a training sample of the data
 ols1_train = lm(Real ~ istrtdaty, data = mean_income_sex1 %>% filter(istrtdaty<=2016))
 
-## Use our model to predict the mass for all starwars characters (excl. Jabba).
 ## Note that I'm including a 95% prediction interval. See ?predict.lm for other
 ## intervals and options.
 mean_income_sex1 = augment(ols1_train, newdata = mean_income_sex1, interval = "prediction")
@@ -169,11 +190,13 @@ mean_income_sex1 %>%
   geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3, col = NA) +
   scale_color_discrete(name = "Training sample?", aesthetics = c("colour", "fill")) +
   labs(
-    title = "Predicting mass from height",
+    title = "Real median Gender Differential (naive)",
     caption = "Line of best fit, with shaded regions denoting 95% prediction interval."
   )
 
-
+#do prediction, then look at residuals for which women 
+#have to log wages
+#what factors do mena dn women differ most in? PCA
 ############
 ################### is female
 mean_income_sex1 <- mean_income_sex1 %>% mutate(Real = ifelse(sex==2, -abs(Real),0))
@@ -185,24 +208,14 @@ dd<-lm(Real~treat+post+treatpost, data =mean_income_sex1)
 library(stargazer)
 stargazer(dd, type = 'text')
 #######################
+# so 
 
 newdata1<-left_join(combined_data.1, mean_income_sex1, c("istrtdaty","sex"))
 
-ols1_train = lm(abs(Real) ~ istrtdaty, data = newdata1 %>% filter(istrtdaty<=2017 & Real>0))
-
+ols1_train = lm(basrate.x ~ istrtdaty, data = newdata1 %>% filter(istrtdaty<=2017 & sex == 2 & Real < 0 & basrate.x < 100))
 newdata1 = augment(ols1_train, newdata = newdata1, interval = "prediction")
 library(broom)
 
-newdata1 %>% filter(Real <0) %>% 
-  ggplot(aes(x = istrtdaty, y = abs(Real), col = (istrtdaty<=2017), fill = (istrtdaty<=2017))) +
-  geom_point(alpha = 0.7) +
-  geom_line(aes(y = .fitted)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3, col = NA) +
-  scale_color_discrete(name = "Training sample?", aesthetics = c("colour", "fill")) +
-  labs(
-    title = "Predicting mass from height",
-    caption = "Line of best fit, with shaded regions denoting 95% prediction interval."
-  )
 
 
 
@@ -217,9 +230,9 @@ newdata1 %>% filter(Real <0) %>%
 
 
 
+#model selection etc
 
-
-
+library(stargazer)
 ##oprlg need fix
 reg_pay_all_control <- newdata1$basrate.x ~ newdata1$sex + newdata1$dvage + newdata1$ovtrate +
   newdata1$Real+ newdata1$fimnlabgrs_dv + newdata1$istrtdaty +newdata1$racel+newdata1$jbstat+newdata1$jbft_dv
