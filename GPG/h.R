@@ -1,3 +1,4 @@
+####-----
 rm(list=ls())
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
 
@@ -42,49 +43,58 @@ library(plm)
 set.seed(12345)
 # read data --------
 data <- read_dta("h_indresp.dta")
-data <- zap_label(data)
+data <- zap_labels(data)
 data <- as.data.frame(data)
+
+#####
 #data <- pdata.frame(data,drop.index=FALSE)
 #data <- pdata.frame(data,index=c("pidp","h_istrtdaty"),drop.index=FALSE)
 #options(max.print=10000)
 
 #quantile(data$h_basrate, 0.01)
 #quantile(data$h_basrate, 0.99)
-data %<>% filter(h_basrate>0 & h_basrate>4.208 & h_basrate<26.952) #5115/5221
-data = select(data, -2,-17:-23)
-#data$h_indinub_lw
-#ggplot(data, aes(x=h_basrate, colour=as.factor(h_sex)))+geom_density() +theme_classic()
-data[data < 0] <- 0 
+data %<>% filter(h_basrate>0 & h_basrate>4.4242 & h_basrate<26.9664 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
+                   h_jbnssec8_dv>0 & h_scsf1>0)
 
+data = select(data, -2,-17:-23)
+
+
+#ggplot(data, aes(x=h_basrate, colour=as.factor(h_sex)))+geom_density() +theme_classic()
+data[data<0] <- NA
+not_all_na <- function(x) any(!is.na(x))
+data %<>% select(where(not_all_na))
+data[is.na(data)] <- 0
+#data1<-slice_sample(data, n = 100)
+#vis_miss(data1, sort = TRUE)
+#gg_miss_var(data)
 data <- data[,-(2:12)]
 data = data[,!grepl("*ind",names(data))] #weighting
 data = data[,!grepl("*pid",names(data))]
 data = data[,!grepl("*h_casiintno",names(data))] #itrtdath + datmm
 set.seed(12345)
-data<-slice_sample(data, n = 50)
-#vis_miss(data1)
+
 
 data$male <- ifelse(data$h_sex == 1, 1, 0)
 data$female <- ifelse(data$h_sex == 2, 1, 0)
-#data$h_basrate <- as.numeric(unclass(data$h_basrate)) 
-#data$h_basrate <- log(data$h_basrate)
+data$h_basrate <- log(data$h_basrate)
 #data %<>% filter(female == 1)
-n=nrow(data)
-Index <- 1:n
+#n=nrow(data)
+#Index <- 1:n
+
 # linear regression --------
 Index <- 1:nrow(data)
 plot(Index, data$h_basrate, xlab = "Index", ylab = "hourly wage") # plotting distribution of wage by index number
 
 # (a)  run simple linear regression of wage on gradcoll, and then for all controls #
-OLS1<-lm(h_basrate ~. , data)
+OLS1<-lm(h_basrate ~female , data)
 summary(OLS1)
-OLS11<-lm(h_basrate ~female , data)
-summary(OLS11)
 
 # run multiple linear regression on all controls 
-OLS2<-lm(log(h_basrate) ~ female*(h_dvage +I(h_dvage^2) + h_ukborn + h_nchild_dv + h_hiqual_dv + h_cjob 
-          + h_jbbgy+ h_scsf1),data)
+OLS2<-lm(log(h_basrate) ~ female*(h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat +
+                                 h_jbnssec8_dv+ h_scsf1),data)
 summary(OLS2)
+
+
 
 linearHypothesis(OLS2, "female = 0") #perfect multicolinearity in model 
 #f stat 0.71. do not reject joint significance. null hypoth that all =0
@@ -117,14 +127,14 @@ lasso_model = linear_reg(
   mixture = 1
 ) %>% set_engine('glmnet')
 # Set up recipe
-lasso_rec = recipe(h_basrate ~., data = data_train) %>% #h_dvage + h_ukborn + h_nchild_dv + h_hiqual_dv + h_cjob + h_jbbgy+ h_scsf1
+lasso_rec = recipe(h_basrate ~female+., data = data_train) %>%
   update_role(1, new_role = 'id variable') %>% 
   step_nzv(all_numeric_predictors()) %>% 
   step_normalize(all_numeric_predictors()) %>% 
-  #step_interact(~ female : all_numeric_predictors()) %>% 
+  step_interact(~ h_dvage + h_nchild_dv + h_hiqual_dv + h_jbstat +
+                  h_jbnssec8_dv+ h_scsf1 : all_numeric_predictors()) %>% 
   step_lincomb(all_numeric_predictors())
 # Set up CV
-
 folds = vfold_cv(data_train, v = 5)
 # Workflow
 lasso_wf = workflow() %>% 
@@ -145,7 +155,7 @@ autoplot(lasso_cv) #mae and rmse similar = good
 
 final_lasso = lasso_wf %>% finalize_workflow(select_best(lasso_cv, metric = 'rmse'))
 final_lasso
-# Write over 'final_fit_knn' with this last_fit() approach
+
 final_fit_lasso = final_lasso %>% last_fit(data_split)
 
 # Collect metrics on the test data!
