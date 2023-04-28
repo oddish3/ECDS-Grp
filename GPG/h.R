@@ -203,7 +203,7 @@ d=as.matrix(data[,9])
 x=as.matrix(data[,10:2095])[,-613]
 y=as.matrix(data[,613])
 
-ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
+ylasso1 <`- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso)
@@ -212,12 +212,13 @@ tab = xtable(table, digits = c(19, 19, 5))
 tab
 # PCA ------
 library(stats)
-
+n=nrow(data)
+Index <- 1:n
 data %<>% relocate(h_basrate)
 data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
-x=as.matrix(data[,2:1514])
-d=as.matrix(data[,1516]) #female
+x=as.matrix(data[,2:1490]) #confounders
+d=as.matrix(data[,1492]) #female
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -225,7 +226,7 @@ xfactconf=xpc_conf$x
 names(xpc_conf)
 summary(xpc_conf)
 xpc_conf$rotation[,1:3]
-
+ 
 # print eigenvalues lambda, which are also the standard dev. of factors
 std_dev <- xpc_conf$sdev
 xpc_var <- std_dev^2
@@ -245,7 +246,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=1516
+nfact=1492
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -255,7 +256,7 @@ for (m in (1:nfact))
 {
   
   ry=resid(lm(y ~ xfactconf[,1:m]))
-  rd=resid(lm(GRADCOLL ~ xfactconf[,1:m]))
+  rd=resid(lm(d ~ xfactconf[,1:m]))
   
   #  or equivalently
   #  OLS_fact <- lm(WAGE~GRADCOLL + xfactconf[,1:m])
@@ -278,7 +279,7 @@ print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
-
+ 
 
 
 
