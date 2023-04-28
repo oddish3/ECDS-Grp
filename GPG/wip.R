@@ -42,16 +42,32 @@ library(foreign)
 library(plm)
 set.seed(12345)
 # read data -------- uncomment if first time
-data <- read_dta("h_indresp.dta")
-data <- zap_labels(data)
-data <- as.data.frame(data)
+#data <- read_dta("h_indresp.dta")
+#data <- zap_labels(data)
+#data <- as.data.frame(data)
 #save(data, file = "data.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
 
 #####
-#quantile(data$h_basrate, 0.01)
-#quantile(data$h_basrate, 0.99)
-data %<>% filter(h_basrate>0 & h_basrate>4.4242 & h_basrate<26.9664 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
+datab  <- read_dta("g_indresp.dta")
+before<-datab[,c(1,1713)] %>% filter(g_basrate>0)
+dataa <- read_dta("i_indresp.dta")
+after<-dataa[,c(1,1675)] %>% filter(i_basrate>0) 
+pres<-data[,c(1,626)] %>% filter(h_basrate>0)
+colnames(before) <- c("pidp", "h_basrate")
+colnames(pres) <- c("pidp", "h_basrate")
+colnames(after) <- c("pidp", "h_basrate")
+avg <- rbind(before, pres, after)
+mean_by_pidp <- aggregate(h_basrate ~  pidp, data = avg, mean)
+data <- merge(data, mean_by_pidp, by = "pidp", all.x = TRUE)
+data$h_basrate <- ifelse(!is.na(data$h_basrate.y), data$h_basrate.y, data$h_basrate)
+
+#save(data, file = "data.Rda")
+#load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
+
+quantile(data$h_fimnlabnet_dv, 0.01)
+quantile(data$h_fimnlabnet_dv, 0.99)
+data %<>% filter(h_fimnlabnet_dv>0 & h_fimnlabnet_dv>50.0304 & h_fimnlabnet_dv<5400 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
                    h_jbnssec8_dv>0 & h_scsf1>0 & h_jbsize>0 &h_tujbpl>0&h_marstat_dv>0) #4414/39k
 #dummies
 data$h_hiqual_dv = ifelse(data$h_hiqual_dv==4&5&9, 1,0) #gcse or lower
@@ -64,10 +80,10 @@ data$h_tujbpl = ifelse(data$h_tujbpl==1, 1,0) #union
 data$h_marstat_dv = ifelse(data$h_marstat_dv==2, 1,0) #married
 data$male <- ifelse(data$h_sex == 1, 1, 0)
 data$female <- ifelse(data$h_sex == 2, 1, 0)
-data$h_basrate <- log(data$h_basrate)
+data$h_fimnlabnet_dv <- log(data$h_fimnlabnet_dv)
 data = select(data, -2,-17:-23)
 
-ggplot(data, aes(x=h_basrate, colour=as.factor(h_sex)))+geom_density() +theme_classic()
+ggplot(data, aes(x=h_fimnlabnet_dv, colour=as.factor(h_sex)))+geom_density() +theme_classic()
 data[data<0] <- 0
 #not_all_na <- function(x) any(!is.na(x))
 #data %<>% select(where(not_all_na))
@@ -81,16 +97,16 @@ set.seed(12345)
 
 #logit regression ----
 #female 
-summary(data$h_basrate[data$female==1]) # median 2.054
-data$amm <- ifelse(data$female == 1 & data$h_basrate >=2.054,1,0) #females above median
+summary(data$h_fimnlabnet_dv[data$female==1]) # median 2.054
+data$amm <- ifelse(data$female == 1 & data$h_fimnlabnet_dv >=7.107,1,0) #females above median
 data1 <- data %>% filter(female==1)
 mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
                  h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
                data = data1, family = "binomial")
 summary(mylogit)
 #male 
-summary(data$h_basrate[data$male==1]) # median 2.054
-data$amm <- ifelse(data$male == 1 & data$h_basrate >= 2.134,1,0) #females above median
+summary(data$h_fimnlabnet_dv[data$male==1]) # median 2.054
+data$amm <- ifelse(data$male == 1 & data$h_fimnlabnet_dv >= 7.443,1,0) #females above median
 data1 <- data %>% filter(male==1)
 mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
                  h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
@@ -99,16 +115,16 @@ summary(mylogit)
 
 # linear regression --------
 #  run simple linear regression of wage on gradcoll, and then for all controls #
-OLS1<-lm(h_basrate ~female , data)
+OLS1<-lm(h_fimnlabnet_dv ~female , data)
 summary(OLS1)
 
 # run multiple linear regression on all controls 
-OLS2<-lm(h_basrate ~ female*(h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+OLS2<-lm(h_fimnlabnet_dv ~ female*(h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
                                h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv), data)
 summary(OLS2)
 
 #naive OLS regression to predict wage gap
-#OLS3<-lm(h_basrate ~ female*., data) #negative insignificant
+#OLS3<-lm(h_fimnlabnet_dv ~ female*., data) #negative insignificant
 #summary(OLS3)
 
 #tidymodels lasso --------
@@ -125,7 +141,7 @@ lasso_model = linear_reg(
   mixture = 1
 ) %>% set_engine('glmnet')
 # Set up recipe
-lasso_rec = recipe(h_basrate ~female+., data = data_train) %>%
+lasso_rec = recipe(h_fimnlabnet_dv ~female+., data = data_train) %>%
   update_role(1:2, new_role = 'id variable') %>% 
   step_nzv(all_numeric_predictors()) %>% 
   step_normalize(all_numeric_predictors()) %>% 
@@ -213,7 +229,7 @@ tab
 # PCA ------
 library(stats)
 
-data %<>% relocate(h_basrate)
+data %<>% relocate(h_fimnlabnet_dv)
 data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
 x=as.matrix(data[,2:1514])
@@ -278,9 +294,6 @@ print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
-
-
-
 
 
 
