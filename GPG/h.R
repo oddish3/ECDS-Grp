@@ -102,21 +102,21 @@ set.seed(12345)
 
 #logit regression ----
 #female 
-summary(data$h_basrate[data$female==1]) # median 2.054
-data$amm <- ifelse(data$female == 1 & data$h_basrate >=2.054,1,0) #females above median
-data1 <- data %>% filter(female==1)
-mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
-                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
-               data = data1, family = "binomial")
-summary(mylogit)
+#summary(data$h_basrate[data$female==1]) # median 2.054
+#data$amm <- ifelse(data$female == 1 & data$h_basrate >=2.054,1,0) #females above median
+#data1 <- data %>% filter(female==1)
+#mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+#                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
+#               data = data1, family = "binomial")
+#summary(mylogit)
 #male 
-summary(data$h_basrate[data$male==1]) # median 2.054
-data$amm <- ifelse(data$male == 1 & data$h_basrate >= 2.134,1,0) #females above median
-data1 <- data %>% filter(male==1)
-mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
-                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
-               data = data1, family = "binomial")
-summary(mylogit)
+#summary(data$h_basrate[data$male==1]) # median 2.054
+#data$amm <- ifelse(data$male == 1 & data$h_basrate >= 2.134,1,0) #males above median
+#data1 <- data %>% filter(male==1)
+#mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+#                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
+#               data = data1, family = "binomial")
+#summary(mylogit)
 
 # linear regression --------
 #  run simple linear regression of wage on gradcoll, and then for all controls #
@@ -147,7 +147,7 @@ lasso_model = linear_reg(
 ) %>% set_engine('glmnet')
 # Set up recipe
 lasso_rec = recipe(h_basrate ~female+., data = data_train) %>%
-  update_role(1:2, new_role = 'id variable') %>% 
+  #update_role(1, new_role = 'id variable') %>% 
   step_nzv(all_numeric_predictors()) %>% 
   step_normalize(all_numeric_predictors()) %>% 
   step_poly(h_dvage) %>% 
@@ -176,14 +176,14 @@ final_fit_lasso = final_lasso %>% last_fit(data_split)
 
 final_fit_lasso %>% 
   extract_fit_parsnip() %>% 
-  vip()
+  vip(num_features = 20)
 
 assign("lasso coef", final_fit_lasso %>% extract_fit_parsnip() %>% tidy())
 `lasso coef` %>% filter(term == 'female')
 `lasso coef` %<>% filter(!estimate==0)
 
-#final_fit_lasso %>% extract_fit_parsnip() %>% 
-#  vi(lambda = lowest_rmse$penalty) %>% vip()
+final_fit_lasso %>% extract_fit_parsnip() %>% 
+  vi(lambda = lowest_rmse$penalty) %>% vip(num_features = 20)
 
 final_fit_lasso %>% extract_fit_parsnip() %>% 
   vi(lambda = lowest_rmse$penalty) %>%
@@ -223,17 +223,15 @@ lasso_cv %>% collect_metrics() %>%
 #hdm lasso --------
 library(hdm)
 data %<>% relocate(h_dvage, h_nchild_dv, h_hiqual_dv , h_jbstat , h_jbsizes,h_jbsizem , h_jbsizel , h_tujbpl , h_marstat_dv)
-d=as.matrix(data[,586]) # interactions w female
-x=as.matrix(data[,11:584])[,c(-116)] #everything bar income var
-y=as.matrix(data[,116])
+d=as.matrix(data[,586]) #  female
+x=as.matrix(data[,1:584])[,-c(116, 10, 502)] #everything bar income and sex vars
+y=as.matrix(data[,116]) #income
 
 ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso)
-table = rbind(summary(ylasso1)$coef[,1:2], summary(ylasso)$coef[,1:2])
-tab = xtable(table, digits = c(19, 19, 5))
-tab
+
 # PCA ------
 library(stats)
 n=nrow(data)
@@ -241,8 +239,8 @@ Index <- 1:n
 data %<>% relocate(h_basrate)
 data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
-x=as.matrix(data[,2:1490]) #confounders
-d=as.matrix(data[,1492]) #female
+x=as.matrix(data[,2:564]) #confounders
+d=as.matrix(data[,566]) #female
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -270,7 +268,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=1492
+nfact=583
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
