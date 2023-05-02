@@ -3,6 +3,7 @@ rm(list=ls())
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
 
 # libraries --------
+library(labelled)
 library(car)
 library(carData)
 library(curl)
@@ -48,15 +49,42 @@ set.seed(12345)
 #data <- as.data.frame(data)
 #save(data, file = "data.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
-load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/mean_by_pidp.rda")
-data %<>% select(-h_basrate) %>% left_join(mean_by_pidp, by = "pidp")
+#load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/mean_by_pidp.rda")
+#data %<>% select(-h_basrate) %>% left_join(mean_by_pidp, by = "pidp")
 #####
 quantile(data$h_basrate, 0.01)
 quantile(data$h_basrate, 0.99)
 data %<>% filter(h_basrate>0 & h_basrate>4.5 & h_basrate<28 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
-                   h_jbnssec8_dv>0 & h_scsf1>0 & h_jbsize>0 &h_tujbpl>0&h_marstat_dv>0) #4414/39k
+                   h_jbnssec8_dv>0 & h_scsf1>0 & h_jbsize>0 &h_tujbpl>0&h_marstat_dv>0 & h_ivfio == 1 &
+                   h_ioutcome == 11) #4414/39k
+
+data[data <=-1] <- NA
+data <- data[,-(2:12)]
+data = data[,!grepl("*ind",names(data))] #weighting
+data = data[,!grepl("*pid",names(data))]
+data = data[,!grepl("*h_casiintno",names(data))] #itrtdath + datmm
+#dat <- slice_sample(data, n=50)
+#vis_dat(dat)
+#gg_miss_upset(dat)
+
+# Identify variables with more than 50% missing values
+missing_prop <- colMeans(is.na(data))
+vars_to_remove <- names(missing_prop[missing_prop > 0.5])
+
+# Remove variables with more than 50% missing values
+data <- data[, !names(data) %in% vars_to_remove]
+
+data[is.na(data)] <- 0
+#data$h_addrmov_dv
+
+#exclude_cols <- c("h_dvage", "h_basrate", "h_birthy", "h_ioutcome")
+# Convert all numeric columns to factors, except for excluded columns
+#data[, sapply(data, is.numeric) & !(names(data) %in% exclude_cols)] <- 
+#lapply(data[, sapply(data, is.numeric) & !(names(data) %in% exclude_cols)], factor)
+
+
 #dummies
-data$h_hiqual_dv = ifelse(data$h_hiqual_dv==4&5&9, 1,0) #gcse or lower
+data$h_hiqual_dv = ifelse(data$h_hiqual_dv==4&5&9, 1,0) #highest qual was gcse 
 data$h_jbstat = ifelse(data$h_jbstat==2, 1,0) #paid - ft/pt emp
 #data$jbterm1 = ifelse(data$jbterm1==1, 1,0) #perm
 data$h_jbsizes = ifelse(data$h_jbsize==1&2&3&4, 1,0) #small
@@ -67,18 +95,9 @@ data$h_marstat_dv = ifelse(data$h_marstat_dv==2, 1,0) #married
 data$male <- ifelse(data$h_sex == 1, 1, 0)
 data$female <- ifelse(data$h_sex == 2, 1, 0)
 data$h_basrate <- log(data$h_basrate)
-data = select(data, -2,-17:-23)
+data = select(data, -1,-17:-23)
 
 ggplot(data, aes(x=h_basrate, colour=as.factor(h_sex)))+geom_density() +theme_classic()
-data[data<0] <- 0
-#not_all_na <- function(x) any(!is.na(x))
-#data %<>% select(where(not_all_na))
-#data[is.na(data)] <- 0
-
-data <- data[,-(2:12)]
-data = data[,!grepl("*ind",names(data))] #weighting
-data = data[,!grepl("*pid",names(data))]
-data = data[,!grepl("*h_casiintno",names(data))] #itrtdath + datmm
 set.seed(12345)
 
 #logit regression ----
@@ -163,6 +182,9 @@ assign("lasso coef", final_fit_lasso %>% extract_fit_parsnip() %>% tidy())
 `lasso coef` %>% filter(term == 'female')
 `lasso coef` %<>% filter(!estimate==0)
 
+#final_fit_lasso %>% extract_fit_parsnip() %>% 
+#  vi(lambda = lowest_rmse$penalty) %>% vip()
+
 final_fit_lasso %>% extract_fit_parsnip() %>% 
   vi(lambda = lowest_rmse$penalty) %>%
   mutate(
@@ -201,11 +223,11 @@ lasso_cv %>% collect_metrics() %>%
 #hdm lasso --------
 library(hdm)
 data %<>% relocate(h_dvage, h_nchild_dv, h_hiqual_dv , h_jbstat , h_jbsizes,h_jbsizem , h_jbsizel , h_tujbpl , h_marstat_dv)
-d=as.matrix(data[,9])
-x=as.matrix(data[,10:2095])[,-613]
-y=as.matrix(data[,613])
+d=as.matrix(data[,586]) # interactions w female
+x=as.matrix(data[,11:584])[,c(-116)] #everything bar income var
+y=as.matrix(data[,116])
 
-ylasso1 <`- rlassoEffect(x=x,y=y,d=d,method="partialling out")
+ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso)
