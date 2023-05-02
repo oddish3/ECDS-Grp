@@ -41,17 +41,19 @@ library(sandwich)
 library(foreign)
 library(plm)
 set.seed(12345)
-# read data -------- uncomment if first time
-data <- read_dta("h_indresp.dta")
-data <- zap_labels(data)
-data <- as.data.frame(data)
+##### read data --------
+#uncomment if first time
+#data <- read_dta("h_indresp.dta")
+#data <- zap_labels(data)
+#data <- as.data.frame(data)
 #save(data, file = "data.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
-
+load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/mean_by_pidp.rda")
+data %<>% select(-h_basrate) %>% left_join(mean_by_pidp, by = "pidp")
 #####
-#quantile(data$h_basrate, 0.01)
-#quantile(data$h_basrate, 0.99)
-data %<>% filter(h_basrate>0 & h_basrate>4.4242 & h_basrate<26.9664 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
+quantile(data$h_basrate, 0.01)
+quantile(data$h_basrate, 0.99)
+data %<>% filter(h_basrate>0 & h_basrate>4.5 & h_basrate<28 &h_dvage>0  &h_hiqual_dv>0& h_jbstat>0&
                    h_jbnssec8_dv>0 & h_scsf1>0 & h_jbsize>0 &h_tujbpl>0&h_marstat_dv>0) #4414/39k
 #dummies
 data$h_hiqual_dv = ifelse(data$h_hiqual_dv==4&5&9, 1,0) #gcse or lower

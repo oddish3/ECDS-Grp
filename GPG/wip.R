@@ -49,6 +49,7 @@ set.seed(12345)
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
 
 #####
+data<- read_dta("h_indresp.dta")
 datab  <- read_dta("g_indresp.dta")
 before<-datab[,c(1,1713)] %>% filter(g_basrate>0)
 dataa <- read_dta("i_indresp.dta")
@@ -57,10 +58,15 @@ pres<-data[,c(1,626)] %>% filter(h_basrate>0)
 colnames(before) <- c("pidp", "h_basrate")
 colnames(pres) <- c("pidp", "h_basrate")
 colnames(after) <- c("pidp", "h_basrate")
-avg <- rbind(before, pres, after)
-mean_by_pidp <- aggregate(h_basrate ~  pidp, data = avg, mean)
-data <- merge(data, mean_by_pidp, by = "pidp", all.x = TRUE)
-data$h_basrate <- ifelse(!is.na(data$h_basrate.y), data$h_basrate.y, data$h_basrate)
+agg_data1 <- aggregate(h_basrate ~ pidp, data = before, mean)
+agg_data2 <- aggregate(h_basrate ~ pidp, data = pres, mean)
+agg_data3 <- aggregate(h_basrate ~ pidp, data = after, mean)
+combined_agg <- rbind(agg_data1, agg_data2, agg_data3)
+mean_by_pidp <- aggregate(h_basrate ~ pidp, data = combined_agg, mean)
+save(mean_by_pidp,file = "mean_by_pidp.rda")
+
+
+
 
 #save(data, file = "data.Rda")
 #load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/data.Rda")
