@@ -4,6 +4,7 @@ setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E5
 
 # libraries --------
 library(xtable)
+library(stargazer)
 library(labelled)
 library(curl)
 library(AER)
@@ -147,7 +148,31 @@ summary(OLS2)
 
 
 #hdm lasso ----- 
-#restricted female 
+### unrestricted
+
+con = model.matrix(~-1 + female+(.) , data)
+con <- con[, which(apply(con, 2, var) != 0)]
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+index.female <- grep("female", colnames(con))
+x=con[,-1] 
+y <- data$h_basrate
+d <- data$female
+
+one<- lm(y ~ con, data)
+summary(one)
+
+effects.female <- rlassoEffects(x = con, y = y, index = index.female)
+summary(effects.female)
+
+
+ylasso1 <- rlassoEffect(x=x,y=y,d=d,index = index.female, method="partialling out")
+summary(ylasso1)
+ylasso <- rlassoEffect(x=x,y=y,d=d,index = index.female,method="double selection")
+summary(ylasso)
+
+
+
+#restricted female one way
 #partial int
 
 con = model.matrix(~-1 + female + female : (h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
@@ -174,11 +199,67 @@ ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso)
 
 
-#full int
+#full int one way
 con = model.matrix(~-1 + female*(h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
                                    h_jbsizes + h_jbsizel + h_tujbpl + h_marstat_dv + 
                                    h_jbnssec8_dvman + h_jbnssec8_dvint + h_jbnssec8_dvsma + h_jbnssec8_dvlow) 
                      , data = data) #controls 
+con <- con[, which(apply(con, 2, var) != 0)]
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+dim(con)
+index.gender <- grep("female", colnames(con))
+y <- data$h_basrate
+effects.female <- rlassoEffects(x = con, y = y, index = index.gender)
+summary(effects.female)
+one<- lm(h_basrate ~ con, data)
+summary(one)
+x=con[,-1] # covariates
+
+y <- data$h_basrate
+d <- data$female
+
+ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
+summary(ylasso1)
+ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso)
+
+#two way
+#part int
+con = model.matrix(~-1 + female + female : (h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+                                              h_jbsizes + h_jbsizel + h_tujbpl + h_marstat_dv + 
+                                              h_jbnssec8_dvman + h_jbnssec8_dvint + h_jbnssec8_dvsma + h_jbnssec8_dvlow) + 
+                     (h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+                        h_jbsizes + h_jbsizel + h_tujbpl + h_marstat_dv + 
+                        h_jbnssec8_dvman + h_jbnssec8_dvint + h_jbnssec8_dvsma + h_jbnssec8_dvlow)^2,
+                   data = data)
+con <- con[, which(apply(con, 2, var) != 0)]
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+index.female <- grep("female", colnames(con))
+x=con[,-1] 
+y <- data$h_basrate
+d <- data$female
+
+one<- lm(y ~ con, data)
+summary(one)
+
+effects.female <- rlassoEffects(x = con, y = y, index = index.female)
+summary(effects.female)
+
+
+ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
+summary(ylasso1)
+ylasso <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso)
+
+
+#full int 
+con = model.matrix(~-1 + female*(h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+                                   h_jbsizes + h_jbsizel + h_tujbpl + h_marstat_dv + 
+                                   h_jbnssec8_dvman + h_jbnssec8_dvint + h_jbnssec8_dvsma + h_jbnssec8_dvlow)+ 
+                     (h_dvage + h_dvage2 + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+                        h_jbsizes + h_jbsizel + h_tujbpl + h_marstat_dv + 
+                        h_jbnssec8_dvman + h_jbnssec8_dvint + h_jbnssec8_dvsma + h_jbnssec8_dvlow)^2,
+                   data = data) #controls 
 con <- con[, which(apply(con, 2, var) != 0)]
 con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 dim(con)
@@ -205,40 +286,17 @@ joint.CI <- confint(effects.female, level = 0.95, joint = TRUE, las = 2)
 joint.CI
 
 
-### unrestricted
-con = model.matrix(~-1 + female+ (.), data)
-con <- con[, which(apply(con, 2, var) != 0)]
-con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
-index.female <- grep("female", colnames(con))
-x=con[,-1] 
-y <- data$h_basrate
-d <- data$female
-
-one<- lm(y ~ con, data)
-summary(one)
-
-effects.female <- rlassoEffects(x = con, y = y, index = index.female)
-summary(effects.female)
-
-
-ylasso1 <- rlassoEffect(x=x,y=y,d=d,index = index.female, method="partialling out")
-summary(ylasso1)
-ylasso <- rlassoEffect(x=x,y=y,d=d,index = index.female,method="double selection")
-summary(ylasso)
-
-
-
-
-
 # PCA ------
 library(stats)
 n=nrow(data)
 Index <- 1:n
-data %<>% relocate(h_basrate)
+data %<>% relocate(h_basrate,female)
 data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
-x=as.matrix(data[,2:564]) #confounders
-d=as.matrix(data[,566]) #female
+d=as.matrix(data[,2]) #female
+
+data %<>% mutate_all(as.numeric)
+x=as.matrix(data[,3:569])
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -266,7 +324,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=583
+nfact=569
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
