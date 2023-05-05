@@ -25,6 +25,27 @@ data$h_marstat_dv = ifelse(data$h_marstat_dv==2, 1,0) #married
 #classification --------
 # Logistic regression --------------------------------------------------------------------
 #is woman in bottom 25% of wage distribution 
+#logit regression ----
+#female 
+#summary(data$h_basrate[data$female==1]) # median 2.054
+#data$amm <- ifelse(data$female == 1 & data$h_basrate >=2.054,1,0) #females above median
+#data1 <- data %>% filter(female==1)
+#mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+#                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
+#               data = data1, family = "binomial")
+#summary(mylogit)
+#male 
+#summary(data$h_basrate[data$male==1]) # median 2.054
+#data$amm <- ifelse(data$male == 1 & data$h_basrate >= 2.134,1,0) #males above median
+#data1 <- data %>% filter(male==1)
+#mylogit <- glm(amm ~ h_dvage +I(h_dvage^2) + h_nchild_dv + h_hiqual_dv + h_jbstat + 
+#                 h_jbsizes+h_jbsizem + h_jbsizel + h_tujbpl + h_marstat_dv, 
+#               data = data1, family = "binomial")
+#summary(mylogit)
+
+
+
+
 
 # Set model
 data_split$h_sex <- as.numeric(unclass(data_split$h_sex)) 
