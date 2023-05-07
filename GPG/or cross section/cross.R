@@ -1,8 +1,0 @@
-rm(list=ls())
-setwd("~/GitHub/ECDS-Grp/GPG/or cross section")
-library(haven)
-uk2014 <- read_dta("uk2014_y.dta")
-View(uk2014)
-library(labelled)
-look_for(uk2014, 'age')
-look_for(uk2014, 'pay')

@@ -1,4 +1,4 @@
- ####-----
+####-----
 rm(list=ls())
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
 
@@ -191,9 +191,9 @@ Z <- data %>% select(c("female","j_nchild_dv1", "j_nchild_dv2", "j_ukborn", "j_d
 sumtable(Z, group = 'female')
 #uncon
 Z <- data %>% select(c("female","j_urban_dv", "j_gor_dv", "j_scghqh", "j_ivlitrans", "j_mhealthtypn1", "j_hconda37", "j_hconda372",
-  "j_ftquals", "j_feend", "j_feend2", "j_hedlik", "j_qfhigh_dvd", "j_qfhigh_dva", "j_qfhigh_dvn", "j_lnprnt", "j_lnprnt2", "j_lprnt",
-  "j_jspl", "j_jsttwtb", "j_jsttwtb2", "j_fivealcdr", "j_ypnetcht", "j_scsf7", "j_yr2uk4", "j_yr2uk42", 
-  "j_eumem", "j_ncrr8", "j_smoker", "j_nxtendreas3", "j_sasian", "j_carr", "j_afr", "j_upset", "j_bensta2"))
+                       "j_ftquals", "j_feend", "j_feend2", "j_hedlik", "j_qfhigh_dvd", "j_qfhigh_dva", "j_qfhigh_dvn", "j_lnprnt", "j_lnprnt2", "j_lprnt",
+                       "j_jspl", "j_jsttwtb", "j_jsttwtb2", "j_fivealcdr", "j_ypnetcht", "j_scsf7", "j_yr2uk4", "j_yr2uk42", 
+                       "j_eumem", "j_ncrr8", "j_smoker", "j_nxtendreas3", "j_sasian", "j_carr", "j_afr", "j_upset", "j_bensta2"))
 sumtable(Z, group = 'female')
 # linear regression --------
 
@@ -206,20 +206,20 @@ summary(OLS2)
 
 #conventional controls
 OLS3<-lm(j_basrate ~ female*(j_nchild_dv1 + j_nchild_dv2 + j_ukborn + j_dvage + j_dvage2 + 
-                                       j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                                       j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                                       j_jbnssec8_dvrout + j_scsf1), data)
+                               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
+                               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
+                               j_jbnssec8_dvrout + j_scsf1), data)
 summary(OLS3)
 
 #unconv controls 
 ols4<-lm(j_basrate ~ female*(j_nchild_dv1 + j_nchild_dv2 + j_ukborn + j_dvage + j_dvage2 + 
-                         j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                         j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                         j_jbnssec8_dvrout + j_scsf1) +
-                         (j_urban_dv + j_gor_dv + j_scghqh + j_ivlitrans + j_mhealthtypn1 + j_hconda37 + j_hconda372 + 
-                         j_ftquals + j_feend + j_feend2 + j_hedlik + j_qfhigh_dvd + j_qfhigh_dva + j_qfhigh_dvn + j_lnprnt + j_lnprnt2 + j_lprnt +
-                         j_jspl + j_jsttwtb  + j_jsttwtb2 + j_fivealcdr + j_ypnetcht + j_scsf7 + j_yr2uk4 + j_yr2uk42 + 
-                         j_eumem + j_ncrr8 + j_smoker + j_nxtendreas3 + j_sasian + j_carr + j_afr + j_upset + j_bensta2)^2, data)
+                               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
+                               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
+                               j_jbnssec8_dvrout + j_scsf1) +
+           (j_urban_dv + j_gor_dv + j_scghqh + j_ivlitrans + j_mhealthtypn1 + j_hconda37 + j_hconda372 + 
+              j_ftquals + j_feend + j_feend2 + j_hedlik + j_qfhigh_dvd + j_qfhigh_dva + j_qfhigh_dvn + j_lnprnt + j_lnprnt2 + j_lprnt +
+              j_jspl + j_jsttwtb  + j_jsttwtb2 + j_fivealcdr + j_ypnetcht + j_scsf7 + j_yr2uk4 + j_yr2uk42 + 
+              j_eumem + j_ncrr8 + j_smoker + j_nxtendreas3 + j_sasian + j_carr + j_afr + j_upset + j_bensta2)^2, data)
 summary(ols4)
 
 #hdm lasso ----- 
@@ -350,7 +350,7 @@ print(numfact)
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
 factprint[496,]
- 
+
 #19/20 -------------------------------------------------
 rm(list=ls())
 ##### read data --------
