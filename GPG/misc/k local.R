@@ -8,10 +8,8 @@ data <- zap_labels(data)
 data <- as.data.frame(data)
 save(data, file = "kdata.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/kdata.Rda")
-#load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/mean_by_pidp.rda")
-#data %<>% select(-l_basrate) %>% left_join(mean_by_pidp, by = "pidp")
 #####
-data %<>% filter(k_ivfio == 1 & k_ioutcome == 11 & k_basrate > 0) 
+data %<>% filter(k_ivfio == 1 & k_ioutcome == 11 & k_basrate > 0  & k_paynu_dv>0 & k_dvage>0) 
 data %<>% select(-starts_with(c("k_ovtr")))
 names(data)[names(data) == "pidp"] <- "individual"
 data %<>% select(-contains(c("pid")))
@@ -50,6 +48,10 @@ data <- mutate(data,
 )
 data$female <- ifelse(data$k_sex == 2, 1, 0) #female
 data$k_basrate <- log(data$k_basrate) #log pay var
+data$k_paynu_dv <- log(data$k_paynu_dv) #log alt pay var
+data$date <- paste(data$k_istrtdatd, data$k_istrtdatm, data$k_istrtdaty, sep = "/")
+data$date <- dmy(data$date)
+data$covid<- ifelse(data$date>"2020-03-23", 1,0)
 data = select(data, -1,-17:-23, ) #remove id var
 data %<>% select(-(c("k_jbnssec8_dv", "k_sex","k_sex_dv"))) #remove highly related vars
 data %<>% select(-contains(c("k_jbnssec3","k_jbnssec5", "jbsoc00_cc"))) #ditto
@@ -74,7 +76,7 @@ data$k_ladopt2 <- ifelse(data$k_ladopt>0, data$k_lprnt^2,0) #has adopted sqr
 data$k_jspl <-  ifelse(data$k_lprnt>2, 1,0) #dont work at home 
 data$k_jsttwtb <- ifelse(data$k_jsttwtb>0, data$k_jsttwtb,0) #time to work
 data$k_jsttwtb2 <- ifelse(data$k_jsttwtb>0, data$k_jsttwtb^2,0) #time to work sq
-data$k_fivealcdr <-  ifelse(data$k_auditc5==4&5, 1,0) #changed to weekly/daily drinking 
+data$k_fivealcdr <-  ifelse(data$k_auditc5==4&5, 1,0) #changed to weekly/daily drinking
 data$k_ypnetcht <-  ifelse(data$k_ypnetcht>=3, 1,0) #more than 1 hour social media
 data$k_scsf7 <-  ifelse(data$k_scsf7==1&2&3, 1,0) #p/m health hurt social life
 data$k_yr2uk4 <-  ifelse(data$k_yr2uk4>0, data$k_yr2uk4,0) #year came to uk
@@ -91,11 +93,6 @@ data$k_upset <-ifelse(data$k_upset>1,1,0) #dont turn to mum when upset = not clo
 data$k_bensta2 <- ifelse(data$k_bensta2==1,1,0) #educ grant
 data$k_nchild_dv2 <- ifelse(data$k_nchild_dv>0, data$k_nchild_dv^2,0) #number of children sqr
 data$k_scsf1 <- ifelse(data$k_scsf1>3, 1,0) #health is fair or poor
-
-ggplot(data, aes(x=k_basrate, colour=as.factor(female)))+geom_density() +theme_classic()
-
-
-
 
 # Identify variables with more than 50% missing values
 data[data < 0] <- NA
@@ -122,7 +119,8 @@ data[is.na(data)] <- 0
 
 quantile(data$k_basrate, 0.01)
 quantile(data$k_basrate, 0.99)
-data %<>% filter(k_basrate> 1.465401& k_basrate<3.366332)
+data %<>% filter(k_basrate>1.470176  & k_basrate<3.401197)
+
 save(data, file = "kkdata.Rda")
 
 
@@ -280,3 +278,34 @@ print(numfact)
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
 factprint[496,]
+
+#sensitivity analysis -----
+OLS1<-lm(k_paynu_dv ~ female, data)
+summary(OLS1)
+#conventional + 
+con = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+                                   k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
+                                   k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
+                                   k_jbnssec8_dvrout), data = data)
+con <- con[, which(apply(con, 2, var) != 0)]
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE))
+x=con[,-1] 
+y <- data$k_paynu_dv
+d <- data$female
+
+ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso11)
+
+#unconventional controls only +
+uncon = model.matrix(~-1 + female+(k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
+                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1)^2, data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+x=uncon[,-1] # covariates
+
+y <- data$k_paynu_dv
+d <- data$female
+
+ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso22)

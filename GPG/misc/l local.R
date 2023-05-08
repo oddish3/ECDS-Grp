@@ -5,10 +5,8 @@ data <- zap_labels(data)
 data <- as.data.frame(data)
 save(data, file = "ldata.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/ldata.Rda")
-#load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/mean_by_pidp.rda")
-#data %<>% select(-l_basrate) %>% left_join(mean_by_pidp, by = "pidp")
 #####
-data %<>% filter(l_ivfio == 1 & l_ioutcome == 11 & l_basrate > 0) 
+data %<>% filter(l_ivfio == 1 & l_ioutcome == 11 & l_basrate > 0  & l_paynu_dv>0 & l_dvage>0) 
 data %<>% select(-starts_with(c("l_ovtr")))
 names(data)[names(data) == "pidp"] <- "individual"
 data %<>% select(-contains(c("pid")))
@@ -47,6 +45,10 @@ data <- mutate(data,
 )
 data$female <- ifelse(data$l_sex == 2, 1, 0) #female
 data$l_basrate <- log(data$l_basrate) #log pay var
+data$l_paynu_dv <- log(data$l_paynu_dv) #log alt pay var
+data$date <- paste(data$l_istrtdatd, data$l_istrtdatm, data$l_istrtdaty, sep = "/")
+data$date <- dmy(data$date)
+data$covid<- ifelse(data$date>"2020-03-23", 1,0)
 data = select(data, -1,-17:-23, ) #remove id var
 data %<>% select(-(c("l_jbnssec8_dv", "l_sex","l_sex_dv"))) #remove highly related vars
 data %<>% select(-contains(c("l_jbnssec3","l_jbnssec5", "jbsoc00_cc"))) #ditto
@@ -89,11 +91,6 @@ data$l_bensta2 <- ifelse(data$l_bensta2==1,1,0) #educ grant
 data$l_nchild_dv2 <- ifelse(data$l_nchild_dv>0, data$l_nchild_dv^2,0) #number of children sqr
 data$l_scsf1 <- ifelse(data$l_scsf1>3, 1,0) #health is fair or poor
 
-ggplot(data, aes(x=l_basrate, colour=as.factor(female)))+geom_density() +theme_classic()
-
-
-
-
 # Identify variables with more than 50% missing values
 data[data < 0] <- NA
 missing_prop <- colMeans(is.na(data))
@@ -119,7 +116,8 @@ data[is.na(data)] <- 0
 
 quantile(data$l_basrate, 0.01)
 quantile(data$l_basrate, 0.99)
-data %<>% filter(l_basrate> 1.465401& l_basrate<3.366332)
+data %<>% filter(l_basrate> 1.527445 & l_basrate<3.496508)
+
 save(data, file = "lldata.Rda")
 
 
@@ -277,3 +275,34 @@ print(numfact)
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
 factprint[496,]
+
+#sensitivity analysis -----
+OLS1<-lm(l_paynu_dv ~ female, data)
+summary(OLS1)
+#conventional + 
+con = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+                                   l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
+                                   l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
+                                   l_jbnssec8_dvrout), data = data)
+con <- con[, which(apply(con, 2, var) != 0)]
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE))
+x=con[,-1] 
+y <- data$l_paynu_dv
+d <- data$female
+
+ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso11)
+
+#unconventional controls only +
+uncon = model.matrix(~-1 + female+(l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
+                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1)^2, data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+x=uncon[,-1] # covariates
+
+y <- data$l_paynu_dv
+d <- data$female
+
+ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso22)
