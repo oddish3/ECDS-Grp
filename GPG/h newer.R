@@ -1052,7 +1052,7 @@ cpi <- tibble(
 data <- left_join(data, cpi, by = "istrtdaty")
 data %<>%  mutate(real_wage = basrate / cpi * 100)
 
-ggplot(data, aes(x = z, y = real_wage, group = as.factor(female), colour = as.factor(female))) +
+p1<-ggplot(data, aes(x = z, y = real_wage, group = as.factor(female), colour = as.factor(female))) +
   stat_summary(
     geom = "pointrange", # use pointrange geom
     fun.min = function(z) {quantile(z, 0.25)}, # lower quartile
@@ -1067,8 +1067,25 @@ ggplot(data, aes(x = z, y = real_wage, group = as.factor(female), colour = as.fa
        x = "Survey Year",
        y = "Log Mean Real Wage",
        colour = "Female") 
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot.png", plot = p1)
+p2<-ggplot(data, aes(x = z, y = real_wage, group = as.factor(female), colour = as.factor(female))) +
+  stat_summary(
+    geom = "pointrange", # use pointrange geom
+    fun.min = function(z) {quantile(z, 0.25)}, # lower quartile
+    fun.max = function(z) {quantile(z, 0.75)}, # upper quartile
+    fun = median, # median
+    position = position_dodge(width = 0.1), # dodge the points by 0.1 units
+    linewidth = 1, size = 1.2 # make the lines twice as thick
+  ) +
+  theme_bw() + # use black and white theme
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Log Median Real Wage by Gender and Survey Year",
+       x = "Survey Year",
+       y = "Log Median Real Wage",
+       colour = "Female") 
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot2.png", plot = p2)
 data %<>%  mutate(real_wage = basrate / cpi * 100) %>% filter(istrtdaty<2022)
-ggplot(data, aes(x = istrtdaty, y = real_wage, group = as.factor(female), colour = as.factor(female))) +
+p3<-ggplot(data, aes(x = istrtdaty, y = real_wage, group = as.factor(female), colour = as.factor(female))) +
   stat_summary(
     geom = "pointrange", # use pointrange geom
     fun.min = function(z) {quantile(z, 0.25)}, # lower quartile
@@ -1083,11 +1100,13 @@ ggplot(data, aes(x = istrtdaty, y = real_wage, group = as.factor(female), colour
        x = "Year Interviewed",
        y = "Log Mean Real Wage",
        colour = "Female") 
-
-ggplot(data, aes(x=basrate, colour=as.factor(z)))+
-  geom_density(linetype = "solid", linewidth = 1, bw = 0.1) +
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot3.png", plot = p3)
+p4<-ggplot(data, aes(x=basrate, colour=as.factor(z)))+
+  geom_density(linetype = "solid", linewidth = 1, bw = 0.05) +
   theme_classic() +
   facet_wrap(~female)
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot4.png", plot = p4)
+
 # summary stats
 names(j) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Has Children", "Born in UK", "Age", "Age^2", "Highest Qual was GCSE", "Permanent Job", "Temporarily Laid Off", "Small Firm",
               "Large Firm", "Unionised", "Married", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban", "London + SE", "Ability to face problems less",
