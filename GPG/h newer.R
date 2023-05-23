@@ -39,7 +39,7 @@ set.seed(12345)
 #save(data, file = "jdata.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/jdata.Rda")
 #####
-data %<>% filter(j_ivfio == 1 & j_ioutcome == 11 & j_basrate > 0  & j_paynu_dv>0 & j_dvage>0) 
+data %<>% filter(j_ivfio == 1 & j_ioutcome == 11 & j_basrate > 0  & j_paynu_dv>0 & j_dvage>0&j_jbft_dv==1&j_jbstat==2&12&13) 
 data %<>% select(-starts_with(c("j_ovtr")))
 names(data)[names(data) == "pidp"] <- "individual"
 data %<>% select(-contains(c("pid")))
@@ -52,7 +52,7 @@ data$j_ukborn <- ifelse(data$j_ukborn>0&data$j_ukborn==5,1,0)#not born in uk
 data$j_dvage <- ifelse(data$j_dvage>0,data$j_dvage,0) #age 
 data$j_dvage2 <- ifelse(data$j_dvage, data$j_dvage^2,0) #age quad
 data$j_hiqual_dv = ifelse(data$j_hiqual_dv>0&data$j_hiqual_dv==4&5&9, 1,0) #highest qual was gcse 
-data$j_jbstatp = ifelse(data$j_jbstat>0&data$j_jbstat==2, 1,0) #in ft or pt emp
+data$j_jbstatp = ifelse(data$j_jbterm1==1, 1,0) #in ft or pt emp
 data$j_jbstatf = ifelse(data$j_jbstat>0&data$j_jbendreas5==1, 1,0) #temp job ended,, no furlough var here so nearest
 data$j_jbsizes = ifelse(data$j_jbsize>0&data$j_jbsize==1&2&3&4, 1,0) #small firm 
 data$j_jbsizel = ifelse(data$j_jbsize>0&data$j_jbsize==8&9, 1,0) #large firm
@@ -127,13 +127,13 @@ data$j_scsf1 <- ifelse(data$j_scsf1>3, 1,0) #health is fair or poor
 # Identify variables with more than 50% missing values
 data[data < 0] <- NA
 missing_prop <- colMeans(is.na(data))
-vars_to_remove <- names(missing_prop[missing_prop > 0.6])
+vars_to_remove <- names(missing_prop[missing_prop > 0.5])
 # Remove variables with more than 50% missing values
 data <- data[, !names(data) %in% vars_to_remove]
 
 #code everything as categorical
 missing_prop <- colMeans(is.na(data))
-vars_to_remove <- names(missing_prop[missing_prop >0.4])
+vars_to_remove <- names(missing_prop[missing_prop >0.5])
 data <- data %>%
   mutate(across(one_of(vars_to_remove), as.factor))
 
@@ -149,7 +149,7 @@ data[is.na(data)] <- 0
 
 quantile(data$j_basrate, 0.01)
 quantile(data$j_basrate, 0.99)
-data %<>% filter(j_basrate> 1.465401& j_basrate<3.366332)
+data %<>% filter(j_basrate> 1.8164521& j_basrate<3.217146)
 
 save(data, file = "jjdata.Rda")
 
@@ -167,7 +167,7 @@ summary(OLS2)
 OLS3<-lm(j_basrate ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                               j_jbnssec8_dvrout), data)
+                               j_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
 #unconv controls 
@@ -176,13 +176,13 @@ ols4<-lm(j_basrate ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 +
                                j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
                              j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                           j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1) + 
+                           j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
            (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
               j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
               j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-              j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1)^2, data)
+              j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data)
 summary(ols4)
 
 #hdm lasso ----- 
@@ -190,7 +190,7 @@ summary(ols4)
 con = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                    j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                    j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                                   j_jbnssec8_dvrout), data = data)
+                                   j_jbnssec8_dvrout+covid), data = data)
 con <- con[, which(apply(con, 2, var) != 0)]
 con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE))
 dim(con)
@@ -210,13 +210,13 @@ uncon = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 
                                       j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                       j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
                                       j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                                      j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1) + 
+                                      j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
                        (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                           j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                           j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                           j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
                           j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                          j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1)^2, data = data) #controls 
+                          j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 dim(uncon)
@@ -233,19 +233,27 @@ ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso22)
 
 # PCA ------
-
 n=nrow(data)
 Index <- 1:n
+uncon = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+                                     j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
+                                     j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
+                                     j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
+                                     j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                                     j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) ,
+                     data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
 set.seed(1)
-dat <- data %>% slice_sample(n=500)
-dat %<>% relocate(j_basrate,female)
-dat=dat[ , which(apply(dat, 2, var) != 0)] #remove zv col
-y=as.matrix(dat[,1]) #wage
-d=as.matrix(dat[,2]) #female
+#dat <- data #%>% slice_sample(n=500)
+data %<>% relocate(j_basrate,female)
+#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+y=as.matrix(data[,1]) #wage
+d=as.matrix(data[,2]) #female
 
-dat %<>% mutate_all(as.numeric)
-x=as.matrix(dat[,3:540])
+#data %<>% mutate_all(as.numeric)
+x=uncon[,2:46]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -273,7 +281,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=498
+nfact=45
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -302,24 +310,52 @@ tic(for (m in (1:nfact))
 }
 )
 toc()
-numfact=which.min(fact_aicc[1:496,1])
+numfact=which.min(fact_aicc)
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
-factprint[496,]
+factprint[numfact,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(j_paynu_dv ~ female, data)
 summary(OLS1)
-#conventional + 
-con = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+#conventional controls
+con = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                    j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                    j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                                   j_jbnssec8_dvrout), data = data)
+                                   j_jbnssec8_dvrout+covid), data = data)
 con <- con[, which(apply(con, 2, var) != 0)]
 con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE))
+dim(con)
+index.female <- grep("female", colnames(con))
+
 x=con[,-1] 
+y <- data$j_paynu_dv
+d <- data$female
+
+ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso11)
+
+#unconventional controls 
+uncon = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+                                     j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
+                                     j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
+                                     j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
+                                     j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                                     j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
+                       (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+                          j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
+                          j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
+                          j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
+                          j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                          j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
+dim(uncon)
+index.female <- grep("female", colnames(uncon))
+
+x=uncon[,-1] # covariates
 y <- data$j_paynu_dv
 d <- data$female
 
@@ -329,7 +365,7 @@ summary(ylasso11)
 #unconventional controls only +
 uncon = model.matrix(~-1 + female+(j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
                           j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                          j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1)^2, data = data) #controls 
+                          j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 x=uncon[,-1] # covariates
@@ -339,9 +375,6 @@ d <- data$female
 
 ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso22)
-
-
-
 
 
 #2019/20 k ----
@@ -552,16 +585,25 @@ summary(ylasso22)
 
 n=nrow(data)
 Index <- 1:n
+uncon = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+                                     k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
+                                     k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
+                                     k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
+                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1) ,
+                     data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
 set.seed(1)
-dat <- data %>% slice_sample(n=500)
-dat %<>% relocate(k_basrate,female)
-dat=dat[ , which(apply(dat, 2, var) != 0)] #remove zv col
-y=as.matrix(dat[,1]) #wage
-d=as.matrix(dat[,2]) #female
+#dat <- data #%>% slice_sample(n=500)
+data %<>% relocate(k_basrate,female)
+#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+y=as.matrix(data[,1]) #wage
+d=as.matrix(data[,2]) #female
 
-dat %<>% mutate_all(as.numeric)
-x=as.matrix(dat[,3:540])
+#data %<>% mutate_all(as.numeric)
+x=uncon[,2:45]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -589,7 +631,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=498
+nfact=44
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -618,12 +660,12 @@ tic(for (m in (1:nfact))
 }
 )
 toc()
-numfact=which.min(fact_aicc[1:496,1])
+numfact=which.min(fact_aicc[1:44,1])
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
-factprint[496,]
+factprint[41,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(k_paynu_dv ~ female, data)
@@ -661,35 +703,7 @@ summary(ylasso22)
 rm(list=ls())
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
 
-# libraries --------
-library(lubridate)
-library(RColorBrewer) # load the package
-library(vtable)
-library(tictoc)
-library(xtable)
-library(stargazer)
-library(labelled)
-library(curl)
-library(AER)
-library(glmnet)
-library(hdm)
-library(stats)
-library(leaps)
-library(haven)
-library(sandwich)
-library(coefplot)
-library(dplyr)
-library(fastverse)
-library(pacman)
-p_load(
-  tidyverse, modeldata, skimr, janitor,
-  kknn, tidymodels, 
-  magrittr
-)
-library(naniar)
-library(foreign)
-library(plm)
-set.seed(12345)
+
 ##### read data --------
 #uncomment if first time
 #data <- read_dta("l_indresp.dta")
@@ -890,16 +904,25 @@ summary(ylasso22)
 
 n=nrow(data)
 Index <- 1:n
+uncon = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+                                     l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
+                                     l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
+                                     l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
+                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1) ,
+                     data = data) #controls 
+uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
+uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
 set.seed(1)
-dat <- data %>% slice_sample(n=500)
-dat %<>% relocate(l_basrate,female)
-dat=dat[ , which(apply(dat, 2, var) != 0)] #remove zv col
-y=as.matrix(dat[,1]) #wage
-d=as.matrix(dat[,2]) #female
+#dat <- data #%>% slice_sample(n=500)
+data %<>% relocate(l_basrate,female)
+#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+y=as.matrix(data[,1]) #wage
+d=as.matrix(data[,2]) #female
 
-dat %<>% mutate_all(as.numeric)
-x=as.matrix(dat[,3:540])
+#data %<>% mutate_all(as.numeric)
+x=uncon[,2:46]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -927,7 +950,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=498
+nfact=45
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -956,12 +979,12 @@ tic(for (m in (1:nfact))
 }
 )
 toc()
-numfact=which.min(fact_aicc[1:496,1])
+numfact=which.min(fact_aicc[1:44,1])
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint
-factprint[496,]
+factprint[44,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(l_paynu_dv ~ female, data)
@@ -1129,5 +1152,73 @@ names(l) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Has Childr
 
 sumtable(l, group = 'female', out = 'latex')
 
+# Collect the results
+Coefficient = c(-0.0852,-0.22869,-0.18737,-0.0801,-0.0992,-0.3061,-0.343,-0.09714,-0.077911,-0.2368,-0.2506,-0.0752)
+se = c(0.0082,0.03988,0.05187,0.0067,0.0089,0.0407,0.05652,0.007418708,0.00907,0.05329,0.0548,0.0074)
+Year = c(1,1,1,1,2,2,2,2,3,3,3,3)
+df<-data.frame(Coefficient,se,
+           Method = rep(c("Naive OLS","Post Double Conventional","Post Double Unconventional","PCA"),3),
+           cil = Coefficient - 1.96*se,
+           ciu = Coefficient + 1.96*se,
+           Year)
 
+library("RColorBrewer")
+my_palette <- brewer.pal(n = 4, name = "Paired")
+
+# Create the plot
+p5 <- ggplot(df, aes(x = factor(Year), y = Coefficient, ymin = cil, ymax = ciu,
+                     color = factor(Method), group = factor(Method))) + 
+  # Add points with error bars and dodge them by 0.5 units
+  geom_point(size = 2.5, position = position_dodge(width = 0.5)) + 
+  geom_errorbar(width = 0.27, position = position_dodge(width = 0.5)) +
+  # Add a horizontal line at y = 0
+  geom_hline(yintercept = 0) + 
+  # Use the custom color palette
+  scale_color_manual(values = my_palette) +
+  # Change the x-axis labels and remove the extra space
+  scale_x_discrete(breaks = c(1:3), labels = c("2018/19", "2019/20", "2020/21"), expand = c(0, 0)) +
+  # Add labels for the axes and the legend
+  labs(color = "Method", x = "Survey Year", y = "Gender Pay Gap") +
+  # Adjust the legend position and appearance
+  theme(legend.position = c(0.15, 0.16), 
+        legend.background = element_rect(color = "black"),
+        legend.text = element_text(size = 13),
+        legend.key.size = unit(1.2, "lines"))
+
+# Plot the result
+plot(p5)
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot5.png", plot = p5)
+
+# Collect the results - sens
+Coefficient = c(-0.4199,-0.3743,-0.38403,-0.4164,-0.3737,-0.37951,-0.39348,-0.33551,-0.36752)
+se = c(0.0222,0.01967,0.02038,0.02402,0.0214,0.02038,0.02359,0.02106,0.02251)
+Year = c(1,1,1,2,2,2,3,3,3)
+df<-data.frame(Coefficient,se,
+               Method = rep(c("Naive OLS","Post Double Conventional","Post Double Unconventional"),3),
+               cil = Coefficient - 1.96*se,
+               ciu = Coefficient + 1.96*se,
+               Year)
+
+p6 <- ggplot(df, aes(x = factor(Year), y = Coefficient, ymin = cil, ymax = ciu,
+                     color = factor(Method), group = factor(Method))) + 
+  # Add points with error bars and dodge them by 0.5 units
+  geom_point(size = 2.5, position = position_dodge(width = 0.5)) + 
+  geom_errorbar(width = 0.27, position = position_dodge(width = 0.5)) +
+  # Add a horizontal line at y = 0
+  geom_hline(yintercept = 0) + 
+  # Use the custom color palette
+  scale_color_manual(values = my_palette) +
+  # Change the x-axis labels and remove the extra space
+  scale_x_discrete(breaks = c(1:3), labels = c("2018/19", "2019/20", "2020/21"), expand = c(0, 0)) +
+  # Add labels for the axes and the legend
+  labs(color = "Method", x = "Survey Year", y = "Gender Pay Gap") +
+  # Adjust the legend position and appearance
+  theme(legend.position = c(0.8, 0.7), 
+        legend.background = element_rect(color = "black"),
+        legend.text = element_text(size = 13),
+        legend.key.size = unit(1.2, "lines"))
+
+# Plot the result
+plot(p6)
+ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot6.png", plot = p6)
 
