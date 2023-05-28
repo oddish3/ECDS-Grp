@@ -104,8 +104,8 @@ data$j_qfhigh_dvn <- ifelse(data$j_qfhigh_dv>0&data$j_qfhigh_dv == 96, 1,0) #no 
 data$j_ladopt <- ifelse(data$j_ladopt>0,data$j_ladopt,0) #has adopted
 data$j_ladopt2 <- ifelse(data$j_ladopt>0, data$j_ladopt^2,0) #has adopted sqr
 data$j_lprnt <- ifelse(data$j_lnprnt ==2, 1,0) #not a father
-data$j_jbpl <-  ifelse(data$j_jbpl>0 & !data$j_jbpl==1, 1,0) #dont work at home 
-data$j_jbttwtb <- ifelse(data$j_jbttwt>0, data$j_jbttwt,0) #time to work
+data$j_jspl <-  ifelse(data$j_jbpl>0 & !data$j_jbpl==1, 1,0) #dont work at home 
+data$j_jsttwtb <- ifelse(data$j_jbttwt>0, data$j_jbttwt,0) #time to work
 data$j_jsttwtb2 <- ifelse(data$j_jbttwt>0, data$j_jbttwt^2,0) #time to work sq
 data$j_fivealcdr <-  ifelse(data$j_fivealcdr>3, 1,0) #2 or more 5 alc drink in last 4 wk
 data$j_ypnetcht <-  ifelse(data$j_ypnetcht>=3, 1,0) #more than 1 hour social media
@@ -165,30 +165,24 @@ OLS2<-lm(j_basrate ~ female + ., data)
 summary(OLS2)
 
 #conventional controls
-OLS3<-lm(j_basrate ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+OLS3<-lm(j_basrate ~ female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                j_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
 #unconv controls 
-ols4<-lm(j_basrate ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
-                               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                               j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                             j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                           j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
-           (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+ols4<-lm(j_basrate ~ female+ (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
               j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-              j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+              j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_lprnt+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
               j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data)
 summary(ols4)
 
 #hdm lasso ----- 
 #conventional controls
-con = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+con = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                    j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                    j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                    j_jbnssec8_dvrout+covid), data = data)
@@ -204,19 +198,15 @@ ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
+write.csv(ylasso11[["selection.index"]], file = "selection_index20181.csv")
+
 
 #unconventional controls 
-uncon = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
-                                      j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                                      j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                                      j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                                      j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                                      j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
-                       (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+uncon = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                           j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                           j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                           j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                          j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                          j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_lprnt+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
                           j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -231,30 +221,36 @@ d <- data$female
 ylasso2 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso2)
 ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+write.csv(ylasso22[["selection.index"]], file = "selection_index2018.csv")
 summary(ylasso22)
 
+
 # PCA ------
+#data <- data %>% slice_sample(n=500)
+#warning do not run, this takes a very very very very long time - 17 min
 n=nrow(data)
 Index <- 1:n
+
 uncon = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                      j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                      j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                      j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                                     j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                                     j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) ,
+                                     j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_lprnt+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                                     j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2 ,
                      data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
-set.seed(1)
-#dat <- data #%>% slice_sample(n=500)
+set.seed(1234)
+
 data %<>% relocate(j_basrate,female)
-#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+#dat %<>% mutate_all(as.numeric)
+#uncon=uncon[ , which(apply(uncon, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
 d=as.matrix(data[,2]) #female
 
-#data %<>% mutate_all(as.numeric)
-x=uncon[,2:47]
+
+x=uncon[,2:982]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -282,7 +278,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=46
+nfact=981
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -315,20 +311,19 @@ numfact=which.min(fact_aicc)
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
-factprint
 factprint[numfact,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(j_paynu_dv ~ female, data)
 summary(OLS1)
 #conventional controls
-OLS3<-lm(j_paynu_dv ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+OLS3<-lm(j_paynu_dv ~ female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                j_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
-con = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+con = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                                    j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                    j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                    j_jbnssec8_dvrout+covid), data = data)
@@ -345,30 +340,18 @@ ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
 
 #unconventional controls
-ols4<-lm(j_paynu_dv ~ female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
-                               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                               j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                               j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                               j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
-           (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+ols4<-lm(j_paynu_dv ~ female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
               j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
               j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
               j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-              j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+              j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_lprnt+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
               j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data)
 summary(ols4)
-uncon = model.matrix(~-1 + female*(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
-                                     j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
-                                     j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
-                                     j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                                     j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
-                                     j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid) + 
-                       (j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
+uncon = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
                           j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                           j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                           j_jbnssec8_dvrout + j_urban_dv+j_gor_dv+j_scghqh+j_ivlitrans+j_mhealthtypn1+j_hconda37+j_hconda372+j_ftquals+j_feend+
-                          j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
+                          j_feend2+j_hedlik+j_qfhigh_dvd+j_qfhigh_dva+j_qfhigh_dvn+j_ladopt+j_ladopt2+j_lprnt+j_jspl+j_jsttwtb+j_jsttwtb2+j_fivealcdr +
                           j_ypnetcht+j_scsf7+j_yr2uk4+j_yr2uk42+j_eumem+j_ncrr8+j_smoker+j_nxtendreas3+j_sasian+j_carr+j_afr+j_upset+j_bensta2+j_nchild_dv2+j_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -400,7 +383,7 @@ data %<>% select(-starts_with(c("k_ind")))
 data <- data[,-(2:12)]
 
 #conventional dummies
-data$k_nchild_dv1 <-ifelse(data$k_nchild_dv>0,1,0) #have children
+data$k_nchild_dv1 <-ifelse(data$k_nchild_dv>0,1,0) #how many children
 data$k_ukborn <- ifelse(data$k_ukborn>0&data$k_ukborn==5,1,0)#not born in uk
 data$k_dvage <- ifelse(data$k_dvage>0,data$k_dvage,0) #age 
 data$k_dvage2 <- ifelse(data$k_dvage, data$k_dvage^2,0) #age quad
@@ -409,7 +392,7 @@ data$k_jbstatp = ifelse(data$k_jbterm1==1, 1,0) #in ft or pt emp
 data$k_jbstatf = ifelse(data$k_jbstat>0&data$k_jbendreas5==1, 1,0) #temp job ended,, no furlough var here so nearest
 data$k_jbsizes = ifelse(data$k_jbsize>0&data$k_jbsize %in% c(1,2,3,4), 1,0) #small firm 
 data$k_jbsizel = ifelse(data$k_jbsize>0&data$k_jbsize %in% c(8,9), 1,0) #large firm
-data$k_tujbpl = ifelse(data$k_niclbns1>6|data$k_niclbns3>6, 1,0) #in a union
+data$k_tujbpl = ifelse(data$k_niclbns1>5 | data$k_niclbns3 >5, 1,0) #politically alligned w union
 data$k_marstat_dv = ifelse(data$k_marstat_dv>0&data$k_marstat_dv==2, 1,0) #married
 data <- mutate(data,
                k_jbnssec8_dvhiman = case_when( #large employers/higher man
@@ -450,15 +433,16 @@ data$k_hconda372 <- ifelse(data$k_hconda37>0, data$k_hconda37^2,0) #^ sqrd
 data$k_ftquals <- ifelse(data$k_ftquals>0&data$k_ftquals==1,1,0) #recent educ qual
 data$k_feend <- ifelse(data$k_feend>0, data$k_feend,0) #age left educ
 data$k_feend2 <- ifelse(data$k_feend>0, data$k_feend^2,0) #left educ sqr
-data$k_hedlik <- ifelse(data$k_hedlik>0&data$k_hedlik %in% c(3,4,5),1,0) #feels they were not likely to purs FE
+data$k_hedlik <- ifelse(data$k_ftedany==1,1,0) #recently in FT educ
 data$k_qfhigh_dvd <- ifelse(data$k_qfhigh_dv>0&data$k_qfhigh_dv %in% c(1,2,3,4,5,6), 1,0) #degree educated
 data$k_qfhigh_dva <- ifelse(data$k_qfhigh_dv>0&data$k_qfhigh_dv %in% c(7,8,9,10,11), 1,0) #a level educatrd
 data$k_qfhigh_dvn <- ifelse(data$k_qfhigh_dv>0&data$k_qfhigh_dv == 96, 1,0) #no formal quals
-data$k_ladopt <- ifelse(data$k_ladopt>0, data$k_lprnt,0) #has adopted
-data$k_ladopt2 <- ifelse(data$k_ladopt>0, data$k_lprnt^2,0) #has adopted sqr
-data$k_jspl <-  ifelse(data$k_lprnt>2, 1,0) #dont work at home 
-data$k_jsttwtb <- ifelse(data$k_jsttwtb>0, data$k_jsttwtb,0) #time to work
-data$k_jsttwtb2 <- ifelse(data$k_jsttwtb>0, data$k_jsttwtb^2,0) #time to work sq
+data$k_ladopt <- ifelse(data$k_ladopt>0,data$k_ladopt,0) #has adopted
+data$k_ladopt2 <- ifelse(data$k_ladopt>0, data$k_ladopt^2,0) #has adopted sqr
+data$k_lprnt <- ifelse(data$k_lnprnt ==2, 1,0) #not a father
+data$k_jspl <-  ifelse(data$k_jbpl>0 & !data$k_jbpl==1, 1,0) #dont work at home 
+data$k_jsttwtb <- ifelse(data$k_jbttwt>0, data$k_jbttwt,0) #time to work
+data$k_jsttwtb2 <- ifelse(data$k_jbttwt>0, data$k_jbttwt^2,0) #time to work sq
 data$k_fivealcdr <-  ifelse(data$k_auditc5 %in% c(4,5), 1,0) #2 or more 5 alc drink in last 4 wk
 data$k_ypnetcht <-  ifelse(data$k_ypnetcht>=3, 1,0) #more than 1 hour social media
 data$k_scsf7 <-  ifelse(data$k_scsf7>0&data$k_scsf7 %in% c(1,2,3), 1,0) #p/m health hurt social life
@@ -467,7 +451,7 @@ data$k_yr2uk42 <-  ifelse(data$k_yr2uk4>0, data$k_yr2uk4^2,0) #year came to uk s
 data$k_eumem <-  ifelse(data$k_eumem>0&data$k_eumem==2, 1,0) #leave eu
 data$k_ncrr8 <-  ifelse(data$k_ncrr8>1, 1,0) #partner live far away
 data$k_smoker <- ifelse(data$k_smoker>0&data$k_smoker==1,1,0) #smokes
-data$k_nxtendreas3 <-ifelse(data$k_nxtendreas3>0&data$k_nxtendreas3==1 & data$k_nxtendreas4 ==1 & 
+data$k_nxtendreas3 <-ifelse(data$k_nxtendreas3==1 | data$k_nxtendreas4 ==1 & 
                               data$k_nxtendreas5 == 1& data$k_nxtendreas7==1, 1,0) # made redundant,sacked, temp job loss or for health reason left job
 data$k_sasian <- ifelse(data$k_racel>0&data$k_racel %in% c(9,10,11),1,0) #south asian
 data$k_carr <- ifelse(data$k_racel>0&data$k_racel ==14,1,0) #carribean
@@ -502,7 +486,7 @@ data[is.na(data)] <- 0
 
 quantile(data$k_basrate, 0.01)
 quantile(data$k_basrate, 0.99)
-data %<>% filter(k_basrate>1.818829& k_basrate<3.234688)
+data %<>% filter(k_basrate>1.8188291& k_basrate<3.234688)
 
 save(data, file = "kkdata.Rda")
 
@@ -517,30 +501,24 @@ OLS2<-lm(k_basrate ~ female + ., data)
 summary(OLS2)
 
 #conventional controls
-OLS3<-lm(k_basrate ~ female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+OLS3<-lm(k_basrate ~ female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                                k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                                k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                                k_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
 #unconv controls 
-ols4<-lm(k_basrate ~ female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
-                               k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
-                               k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
-                               k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                               k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
-                               k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid) + 
-           (k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+ols4<-lm(k_basrate ~ female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
               k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
               k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
               k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-              k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+              k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_lprnt+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
               k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid)^2, data)
 summary(ols4)
 
 #hdm lasso ----- 
 #conventional controls
-con = model.matrix(~-1 + female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+con = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                                    k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                                    k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                                    k_jbnssec8_dvrout+covid), data = data)
@@ -556,19 +534,14 @@ ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
+write.csv(ylasso11[["selection.index"]], file = "selection_index20191.csv")
 
 #unconventional controls 
-uncon = model.matrix(~-1 + female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
-                                     k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
-                                     k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
-                                     k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
-                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid) + 
-                       (k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+uncon = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                           k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                           k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                           k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                          k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+                          k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_lprnt+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
                           k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -583,30 +556,35 @@ d <- data$female
 ylasso2 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso2)
 ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+write.csv(ylasso22[["selection.index"]], file = "selection_index2019.csv")
 summary(ylasso22)
 
 # PCA ------
+#data <- data %>% slice_sample(n=500)
+#warning do not run, this takes a very very very very long time - 17 min
 n=nrow(data)
 Index <- 1:n
+
 uncon = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                                      k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                                      k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                                      k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
-                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid) ,
+                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_lprnt+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid)^2 ,
                      data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
-set.seed(1)
-#dat <- data #%>% slice_sample(n=500)
+set.seed(1234)
+
 data %<>% relocate(k_basrate,female)
-#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+#dat %<>% mutate_all(as.numeric)
+#uncon=uncon[ , which(apply(uncon, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
 d=as.matrix(data[,2]) #female
 
-#data %<>% mutate_all(as.numeric)
-x=uncon[,2:45]
+
+x=uncon[,2:982]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -634,7 +612,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=44
+nfact=981
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -667,20 +645,19 @@ numfact=which.min(fact_aicc)
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
-factprint
 factprint[numfact,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(k_paynu_dv ~ female, data)
 summary(OLS1)
 #conventional controls
-OLS3<-lm(k_paynu_dv ~ female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+OLS3<-lm(k_paynu_dv ~ female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                                 k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                                 k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                                 k_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
-con = model.matrix(~-1 + female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+con = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                                    k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                                    k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                                    k_jbnssec8_dvrout+covid), data = data)
@@ -697,30 +674,18 @@ ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
 
 #unconventional controls
-ols4<-lm(k_paynu_dv ~ female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
-                                k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
-                                k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
-                                k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                                k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
-                                k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid) + 
-           (k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+ols4<-lm(k_paynu_dv ~ female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
               k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
               k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
               k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-              k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+              k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_lprnt+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
               k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid)^2, data)
 summary(ols4)
-uncon = model.matrix(~-1 + female*(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
-                                     k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
-                                     k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
-                                     k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                                     k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
-                                     k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid) + 
-                       (k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
+uncon = model.matrix(~-1 + female+(k_nchild_dv1 + k_ukborn + k_dvage + k_dvage2 + 
                           k_hiqual_dv + k_jbstatp + k_jbstatf + k_jbsizes  + k_jbsizel + 
                           k_tujbpl + k_marstat_dv + k_jbnssec8_dvhiman + k_jbnssec8_dvhiprof + k_jbnssec8_dvlowma +
                           k_jbnssec8_dvrout + k_urban_dv+k_gor_dv+k_scghqh+k_ivlitrans+k_mhealthtypn1+k_hconda37+k_hconda372+k_ftquals+k_feend+
-                          k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
+                          k_feend2+k_hedlik+k_qfhigh_dvd+k_qfhigh_dva+k_qfhigh_dvn+k_ladopt+k_ladopt2+k_lprnt+k_jspl+k_jsttwtb+k_jsttwtb2+k_fivealcdr +
                           k_ypnetcht+k_scsf7+k_yr2uk4+k_yr2uk42+k_eumem+k_ncrr8+k_smoker+k_nxtendreas3+k_sasian+k_carr+k_afr+k_upset+k_bensta2+k_nchild_dv2+k_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -732,6 +697,7 @@ y <- data$k_paynu_dv
 d <- data$female
 
 ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
+summary(ylasso11)
 summary(ylasso11)
 
 #2020/21 l -----
@@ -752,7 +718,7 @@ data %<>% select(-starts_with(c("l_ind")))
 data <- data[,-(2:12)]
 
 #conventional dummies
-data$l_nchild_dv1 <-ifelse(data$l_nchild_dv>0,1,0) #have children
+data$l_nchild_dv1 <-ifelse(data$l_nchild_dv>0,1,0) #how many children
 data$l_ukborn <- ifelse(data$l_ukborn>0&data$l_ukborn==5,1,0)#not born in uk
 data$l_dvage <- ifelse(data$l_dvage>0,data$l_dvage,0) #age 
 data$l_dvage2 <- ifelse(data$l_dvage, data$l_dvage^2,0) #age quad
@@ -802,15 +768,16 @@ data$l_hconda372 <- ifelse(data$l_hconda37>0, data$l_hconda37^2,0) #^ sqrd
 data$l_ftquals <- ifelse(data$l_ftquals>0&data$l_ftquals==1,1,0) #recent educ qual
 data$l_feend <- ifelse(data$l_feend>0, data$l_feend,0) #age left educ
 data$l_feend2 <- ifelse(data$l_feend>0, data$l_feend^2,0) #left educ sqr
-data$l_hedlik <- ifelse(data$l_hedlik>0&data$l_hedlik %in% c(3,4,5),1,0) #feels they were not likely to purs FE
+data$l_hedlik <- ifelse(data$l_ftedany==1,1,0) #recently in FT educ
 data$l_qfhigh_dvd <- ifelse(data$l_qfhigh_dv>0&data$l_qfhigh_dv %in% c(1,2,3,4,5,6), 1,0) #degree educated
 data$l_qfhigh_dva <- ifelse(data$l_qfhigh_dv>0&data$l_qfhigh_dv %in% c(7,8,9,10,11), 1,0) #a level educatrd
 data$l_qfhigh_dvn <- ifelse(data$l_qfhigh_dv>0&data$l_qfhigh_dv == 96, 1,0) #no formal quals
-data$l_ladopt <- ifelse(data$l_ladopt>0, data$l_lprnt,0) #has adopted
-data$l_ladopt2 <- ifelse(data$l_ladopt>0, data$l_lprnt^2,0) #has adopted sqr
-data$l_jspl <-  ifelse(data$l_lprnt>2, 1,0) #dont work at home 
-data$l_jsttwtb <- ifelse(data$l_jsttwtb>0, data$l_jsttwtb,0) #time to work
-data$l_jsttwtb2 <- ifelse(data$l_jsttwtb>0, data$l_jsttwtb^2,0) #time to work sq
+data$l_ladopt <- ifelse(data$l_ladopt>0,data$l_ladopt,0) #has adopted
+data$l_ladopt2 <- ifelse(data$l_ladopt>0, data$l_ladopt^2,0) #has adopted sqr
+data$l_lprnt <- ifelse(data$l_lnprnt ==2, 1,0) #not a father
+data$l_jspl <-  ifelse(data$l_jbpl>0 & !data$l_jbpl==1, 1,0) #dont work at home 
+data$l_jsttwtb <- ifelse(data$l_jbttwt>0, data$l_jbttwt,0) #time to work
+data$l_jsttwtb2 <- ifelse(data$l_jbttwt>0, data$l_jbttwt^2,0) #time to work sq
 data$l_fivealcdr <-  ifelse(data$l_fivealcdr>3, 1,0) #2 or more 5 alc drink in last 4 wk
 data$l_ypnetcht <-  ifelse(data$l_ypnetcht>=3, 1,0) #more than 1 hour social media
 data$l_scsf7 <-  ifelse(data$l_scsf7>0&data$l_scsf7 %in% c(1,2,3), 1,0) #p/m health hurt social life
@@ -819,7 +786,7 @@ data$l_yr2uk42 <-  ifelse(data$l_yr2uk4>0, data$l_yr2uk4^2,0) #year came to uk s
 data$l_eumem <-  ifelse(data$l_eumem>0&data$l_eumem==2, 1,0) #leave eu
 data$l_ncrr8 <-  ifelse(data$l_ncrr8>1, 1,0) #partner live far away
 data$l_smoker <- ifelse(data$l_smoker>0&data$l_smoker==1,1,0) #smokes
-data$l_nxtendreas3 <-ifelse(data$l_nxtendreas3>0&data$l_nxtendreas3==1 & data$l_nxtendreas4 ==1 & 
+data$l_nxtendreas3 <-ifelse(data$l_nxtendreas3==1 | data$l_nxtendreas4 ==1 & 
                               data$l_nxtendreas5 == 1& data$l_nxtendreas7==1, 1,0) # made redundant,sacked, temp job loss or for health reason left job
 data$l_sasian <- ifelse(data$l_racel>0&data$l_racel %in% c(9,10,11),1,0) #south asian
 data$l_carr <- ifelse(data$l_racel>0&data$l_racel ==14,1,0) #carribean
@@ -869,30 +836,24 @@ OLS2<-lm(l_basrate ~ female + ., data)
 summary(OLS2)
 
 #conventional controls
-OLS3<-lm(l_basrate ~ female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+OLS3<-lm(l_basrate ~ female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                                l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                                l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                                l_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
 #unconv controls 
-ols4<-lm(l_basrate ~ female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
-                               l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
-                               l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
-                               l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                               l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
-                               l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid) + 
-           (l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+ols4<-lm(l_basrate ~ female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
               l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
               l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
               l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-              l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+              l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_lprnt+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
               l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid)^2, data)
 summary(ols4)
 
 #hdm lasso ----- 
 #conventional controls
-con = model.matrix(~-1 + female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+con = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                                    l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                                    l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                                    l_jbnssec8_dvrout+covid), data = data)
@@ -908,19 +869,14 @@ ylasso1 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso1)
 ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
+write.csv(ylasso11[["selection.index"]], file = "selection_index20201.csv")
 
 #unconventional controls 
-uncon = model.matrix(~-1 + female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
-                                     l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
-                                     l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
-                                     l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
-                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid) + 
-                       (l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+uncon = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                           l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                           l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                           l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                          l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+                          l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_lprnt+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
                           l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -936,29 +892,81 @@ ylasso2 <- rlassoEffect(x=x,y=y,d=d,method="partialling out")
 summary(ylasso2)
 ylasso22 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso22)
+write.csv(ylasso22[["selection.index"]], file = "selection_index2020.csv")
+
+#looking at selection of controls ----
+
+#con
+selection_index1 = read.csv("selection_index20181.csv") 
+selection_index1 %<>% filter(x == "TRUE") 
+selection_index1 %<>% mutate(y = gsub(":?(j_)([^_]+)", "\\2", selection_index1$X))
+
+selection_index2 = read.csv("selection_index20191.csv") 
+selection_index2 %<>% filter(x == "TRUE") 
+selection_index2 %<>% mutate(y = gsub(":?(k_)([^_]+)", "\\2", selection_index2$X))
+
+selection_index3 = read.csv("selection_index20201.csv") 
+selection_index3 %<>% filter(x == "TRUE") 
+selection_index3 %<>% mutate(y = gsub(":?(l_)([^_]+)", "\\2", selection_index3$X))
+
+common_names <- Reduce(intersect, list(selection_index1$y,selection_index2$y,selection_index3$y))
+common_names
+unique1 <- setdiff(selection_index1$y, common_names)
+unique1
+unique2 <- setdiff(selection_index2$y, common_names)
+unique2
+unique3 <- setdiff(selection_index1$y, common_names)
+unique3
+
+#uncon
+selection_index1 = read.csv("selection_index2018.csv") 
+selection_index1 %<>% filter(x == "TRUE") 
+selection_index1 %<>% mutate(y = gsub(":?j_([^:]+)", "\\1", selection_index1$X))
+
+selection_index2 = read.csv("selection_index2019.csv") 
+selection_index2 %<>% filter(x == "TRUE") 
+selection_index2 %<>% mutate(y = gsub(":?k_([^:]+)", "\\1", selection_index2$X))
+
+selection_index3 = read.csv("selection_index2020.csv") 
+selection_index3 %<>% filter(x == "TRUE") 
+selection_index3 %<>% mutate(y = gsub(":?l_([^:]+)", "\\1", selection_index3$X))
+
+common_names <- Reduce(intersect, list(selection_index1$y,selection_index2$y,selection_index3$y))
+common_names
+unique1 <- setdiff(selection_index1$y, common_names)
+unique1
+unique2 <- setdiff(selection_index2$y, common_names)
+unique2
+unique3 <- setdiff(selection_index1$y, common_names)
+unique3
+
 
 # PCA ------
+#data <- data %>% slice_sample(n=500)
+#warning do not run, this takes a very very very very long time - 17 min
 n=nrow(data)
 Index <- 1:n
+
 uncon = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                                      l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                                      l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                                      l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
-                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid) ,
+                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_lprnt+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid)^2 ,
                      data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
 
-set.seed(1)
-#dat <- data #%>% slice_sample(n=500)
+set.seed(1234)
+
 data %<>% relocate(l_basrate,female)
-#data=data[ , which(apply(data, 2, var) != 0)] #remove zv col
+#dat %<>% mutate_all(as.numeric)
+#uncon=uncon[ , which(apply(uncon, 2, var) != 0)] #remove zv col
 y=as.matrix(data[,1]) #wage
 d=as.matrix(data[,2]) #female
 
-#data %<>% mutate_all(as.numeric)
-x=uncon[,2:46]
+
+x=uncon[,2:982]
 
 xpc_conf=prcomp(x,center = TRUE, scale. = TRUE)
 xfactconf=xpc_conf$x
@@ -986,7 +994,7 @@ plot(xpc_varexpl,xlab="Principal Component",ylab="Proportion of Variance Explain
      type="b")
 
 summary(lm(y~d+x))
-nfact=45
+nfact=981
 fact_coef = matrix(0,nrow=nfact,ncol=1)
 fact_se   = matrix(0,nrow=nfact,ncol=1)
 fact_aic  = matrix(0,nrow=nfact,ncol=1)
@@ -1019,20 +1027,19 @@ numfact=which.min(fact_aicc)
 print(numfact)
 
 factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
-factprint
 factprint[numfact,1:2]
 
 #sensitivity analysis -----
 OLS1<-lm(l_paynu_dv ~ female, data)
 summary(OLS1)
 #conventional controls
-OLS3<-lm(l_paynu_dv ~ female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+OLS3<-lm(l_paynu_dv ~ female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                                 l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                                 l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                                 l_jbnssec8_dvrout+covid), data)
 summary(OLS3)
 
-con = model.matrix(~-1 + female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+con = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                                    l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                                    l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                                    l_jbnssec8_dvrout+covid), data = data)
@@ -1049,30 +1056,18 @@ ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
 
 #unconventional controls
-ols4<-lm(l_paynu_dv ~ female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
-                                l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
-                                l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
-                                l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                                l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
-                                l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid) + 
-           (l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+ols4<-lm(l_paynu_dv ~ female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
               l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
               l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
               l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-              l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+              l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_lprnt+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
               l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid)^2, data)
 summary(ols4)
-uncon = model.matrix(~-1 + female*(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
-                                     l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
-                                     l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
-                                     l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                                     l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
-                                     l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid) + 
-                       (l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
+uncon = model.matrix(~-1 + female+(l_nchild_dv1 + l_ukborn + l_dvage + l_dvage2 + 
                           l_hiqual_dv + l_jbstatp + l_jbstatf + l_jbsizes  + l_jbsizel + 
                           l_tujbpl + l_marstat_dv + l_jbnssec8_dvhiman + l_jbnssec8_dvhiprof + l_jbnssec8_dvlowma +
                           l_jbnssec8_dvrout + l_urban_dv+l_gor_dv+l_scghqh+l_ivlitrans+l_mhealthtypn1+l_hconda37+l_hconda372+l_ftquals+l_feend+
-                          l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
+                          l_feend2+l_hedlik+l_qfhigh_dvd+l_qfhigh_dva+l_qfhigh_dvn+l_ladopt+l_ladopt2+l_lprnt+l_jspl+l_jsttwtb+l_jsttwtb2+l_fivealcdr +
                           l_ypnetcht+l_scsf7+l_yr2uk4+l_yr2uk42+l_eumem+l_ncrr8+l_smoker+l_nxtendreas3+l_sasian+l_carr+l_afr+l_upset+l_bensta2+l_nchild_dv2+l_scsf1+covid)^2, data = data) #controls 
 uncon <- uncon[, which(apply(uncon, 2, var) != 0)]
 uncon = apply(uncon, 2, function(x) scale(x, center = TRUE, scale = FALSE)) #587
@@ -1096,7 +1091,7 @@ j %<>% select(c("female", "j_basrate", "j_paynu_dv","j_nchild_dv1" ,"j_ukborn","
                      "j_tujbpl","j_marstat_dv","j_jbnssec8_dvhiman","j_jbnssec8_dvhiprof","j_jbnssec8_dvlowma", 
                      "j_jbnssec8_dvrout","j_urban_dv", "j_gor_dv", "j_scghqh", "j_ivlitrans", "j_mhealthtypn1",
                      "j_hconda37", "j_hconda372", "j_ftquals", "j_feend",
-                     "j_feend2", "j_hedlik", "j_qfhigh_dvd", "j_qfhigh_dva", "j_qfhigh_dvn", "j_ladopt", "j_ladopt2", 
+                     "j_feend2", "j_hedlik", "j_qfhigh_dvd", "j_qfhigh_dva", "j_qfhigh_dvn", "j_ladopt", "j_ladopt2","j_lprnt", 
                      "j_jspl" ,"j_jsttwtb", "j_jsttwtb2", "j_fivealcdr",
                      "j_ypnetcht", "j_scsf7", "j_yr2uk4", "j_yr2uk42" ,"j_eumem", "j_ncrr8", "j_smoker" ,"j_nxtendreas3", "j_sasian", "j_carr", "j_afr",
                      "j_upset", "j_bensta2", "j_nchild_dv2", "j_scsf1", "j_istrtdaty"))
@@ -1108,7 +1103,7 @@ k %<>% select(c("female", "k_basrate", "k_paynu_dv", "k_nchild_dv1" ,"k_ukborn",
                 "k_tujbpl","k_marstat_dv","k_jbnssec8_dvhiman","k_jbnssec8_dvhiprof","k_jbnssec8_dvlowma", 
                 "k_jbnssec8_dvrout","k_urban_dv", "k_gor_dv", "k_scghqh", "k_ivlitrans", "k_mhealthtypn1",
                 "k_hconda37", "k_hconda372", "k_ftquals", "k_feend",
-                "k_feend2", "k_hedlik", "k_qfhigh_dvd", "k_qfhigh_dva", "k_qfhigh_dvn", "k_ladopt", "k_ladopt2", 
+                "k_feend2", "k_hedlik", "k_qfhigh_dvd", "k_qfhigh_dva", "k_qfhigh_dvn", "k_ladopt", "k_ladopt2", "k_lprnt", 
                 "k_jspl" ,"k_jsttwtb", "k_jsttwtb2", "k_fivealcdr",
                 "k_ypnetcht", "k_scsf7", "k_yr2uk4", "k_yr2uk42" ,"k_eumem", "k_ncrr8", "k_smoker" ,"k_nxtendreas3", "k_sasian", "k_carr", "k_afr",
                 "k_upset", "k_bensta2", "k_nchild_dv2", "k_scsf1", "k_istrtdaty"))
@@ -1120,7 +1115,7 @@ l %<>% select(c("female","l_basrate", "l_paynu_dv", "l_nchild_dv1" ,"l_ukborn","
                 "l_tujbpl","l_marstat_dv","l_jbnssec8_dvhiman","l_jbnssec8_dvhiprof","l_jbnssec8_dvlowma", 
                 "l_jbnssec8_dvrout","l_urban_dv", "l_gor_dv", "l_scghqh", "l_ivlitrans", "l_mhealthtypn1",
                 "l_hconda37", "l_hconda372", "l_ftquals", "l_feend",
-                "l_feend2", "l_hedlik", "l_qfhigh_dvd", "l_qfhigh_dva", "l_qfhigh_dvn", "l_ladopt", "l_ladopt2", 
+                "l_feend2", "l_hedlik", "l_qfhigh_dvd", "l_qfhigh_dva", "l_qfhigh_dvn", "l_ladopt", "l_ladopt2", "l_lprnt", 
                 "l_jspl" ,"l_jsttwtb", "l_jsttwtb2", "l_fivealcdr",
                 "l_ypnetcht", "l_scsf7", "l_yr2uk4", "l_yr2uk42" ,"l_eumem", "l_ncrr8", "l_smoker" ,"l_nxtendreas3", "l_sasian", "l_carr", "l_afr",
                 "l_upset", "l_bensta2", "l_nchild_dv2", "l_scsf1", "l_istrtdaty"))
@@ -1197,34 +1192,32 @@ ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/
 p4<-ggplot(data, aes(x=basrate, colour=as.factor(z)))+
   geom_density(linetype = "solid", linewidth = 1, bw = 0.05) +
   theme_classic() +
-  facet_wrap(~female)
+  facet_wrap(~female) + labs(x = "Hourly Rate", title = "Density of Hourly rate by Female")
 ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot4.png", plot = p4)
 
 # summary stats
-names(j) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Has Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE", "Permanent Job", "Temporarily Laid Off", "Small Firm",
-              "Large Firm", "Unionised", "Married", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban", "London + SE", "Ability to face problems less",
-              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
-              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Year came to UK",
-              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Number of Children^2", "Health is fair or poor", "Survey Year")
+names(j) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE or lower", "Permanent Job", "Temporary Job End Recent", "<50 Firm",
+              "500+ Firm", "Union*", "Cohabitate", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban area", "London + SE", "Able to face problems less",
+              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2","Not a father", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
+              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week*", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Years ago came to UK",
+              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Children^2", "Health is fair or poor", "Year","Survey Year")
 sumtable(j, group = 'female', out = 'latex')
-names(k) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Has Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE", "Permanent Job", "Temporarily Laid Off", "Small Firm",
-              "Large Firm", "Unionised", "Married", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban", "London + SE", "Ability to face problems less",
-              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
-              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Year came to UK",
-              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Number of Children^2", "Health is fair or poor", "Survey Year")
-
+names(k) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE or lower", "Permanent Job", "Temporary Job End Recent", "<50 Firm",
+              "500+ Firm", "Union*", "Cohabitate", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban area", "London + SE", "Able to face problems less",
+              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2","Not a father", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
+              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week*", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Years ago came to UK",
+              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Children^2", "Health is fair or poor","Year", "Survey Year")
 sumtable(k, group = 'female', out = 'latex')
-names(l) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Has Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE", "Permanent Job", "Temporarily Laid Off", "Small Firm",
-              "Large Firm", "Unionised", "Married", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban", "London + SE", "Ability to face problems less",
-              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
-              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Year came to UK",
-              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Number of Children^2", "Health is fair or poor", "Survey Year")
-
+names(l) <- c("female","Basic Hourly Rate", "Usual Net Monthly Pay", "Children", "Not born in UK", "Age", "Age^2", "Highest Qual was GCSE or lower", "Permanent Job", "Temporary Job End Recent", "<50 Firm",
+              "500+ Firm", "Union*", "Cohabitate", "High Managerial Industry", "High Proffesional Industry", "Low Managerial", "Routine Work Industry", "Urban area", "London + SE", "Able to face problems less",
+              "Interview not in English", "Anxiety", "Age diagnosed with Anxiety", "Anxiety Age^2","Not a father", "Recent Education Qualification", "Age Left Education", "Age Left Education^2", "Recently in FT Educ", "Highest Degree", "Highest A Level",
+              "No Highest Education", "Has adopted", "Adopted Children^2", "Don't Work at Home", "Time to Work", "Time to Work^2", "Five Alcoholic Drinks a week*", "More than 1 Hour on Social M", "Phys/Ment Health affected Social", "Years ago came to UK",
+              "Year came to UK^2", "Leave EU", "Partner live far away", "Smokes", "Redundant/Sacked/Health made lose job", "South Asian", "Carribean", "African"," Doesn't Turn to Mother"," Education Grant","Children^2", "Health is fair or poor", "Year", "Survey Year")
 sumtable(l, group = 'female', out = 'latex')
 
-# Collect the results
-Coefficient = c(-0.0937,-0.15546,0.02452,-0.087076,-0.10738,-0.02995,-0.05144,-0.10315,-0.115963,-0.05563,-0.08921,-0.1083)
-se = c(0.010396,0.06763,0.05419,0.009227,0.010923,0.04444,0.05535,0.00973,0.011435,0.05375,0.06541,0.00980)
+# Collect the main results
+Coefficient = c(-0.0937,-0.08917,-0.0864,-0.0844,-0.107386,-0.104582,-0.10425,-0.1034,-0.115963,-0.10631,-0.104871,-0.1069)
+se = c(0.010396,0.00887,0.009272,0.00931,0.010923,0.009424,0.00934,0.0098,0.011435,0.009629,0.009797,0.01)
 Year = c(1,1,1,1,2,2,2,2,3,3,3,3)
 df<-data.frame(Coefficient,se,
            Method = rep(c("Naive OLS","Post Double Conventional","Post Double Unconventional","PCA"),3),
@@ -1250,7 +1243,7 @@ p5 <- ggplot(df, aes(x = factor(Year), y = Coefficient, ymin = cil, ymax = ciu,
   # Add labels for the axes and the legend
   labs(color = "Method", x = "Survey Year", y = "Gender Pay Gap") +
   # Adjust the legend position and appearance
-  theme(legend.position = c(0.5, 0.16), 
+  theme(legend.position = c(0.8, 0.75), 
         legend.background = element_rect(color = "black"),
         legend.text = element_text(size = 13),
         legend.key.size = unit(1.2, "lines"))
@@ -1259,11 +1252,11 @@ p5 <- ggplot(df, aes(x = factor(Year), y = Coefficient, ymin = cil, ymax = ciu,
 plot(p5)
 ggsave("C:/Users/solya/OneDrive - The University of Manchester/Documents/GitHub/ECDS-Grp/GPG/tables/plot5.png", plot = p5)
 
-my_palette <- brewer.pal(n = 3, name = "Paired")
-
+my_palette <- brewer.pal(n = 4, name = "Paired")
+my_palette<-my_palette[-2]
 # Collect the results - sens analysis 
-Coefficient = c(-0.21862,-0.4363,-0.1555,-0.24499,-0.07099,-0.0738,-0.23754,-0.14513,-0.1278)
-se = c(0.01814,0.1373,0.1048,0.01736,0.08028,0.09535,0.01716,0.09535,0.1124)
+Coefficient = c(-0.21862,-0.2115,-0.2024,-0.24499,-0.2295,-0.23561,-0.23754,-0.2226,-0.2164)
+se = c(0.01814,0.01747,0.0184,0.01736,0.01742,0.01741,0.01716,0.01605,0.01733)
 Year = c(1,1,1,2,2,2,3,3,3)
 df<-data.frame(Coefficient,se,
                Method = rep(c("Naive OLS","Post Double Conventional","Post Double Unconventional"),3),
@@ -1285,7 +1278,7 @@ p6 <- ggplot(df, aes(x = factor(Year), y = Coefficient, ymin = cil, ymax = ciu,
   # Add labels for the axes and the legend
   labs(color = "Method", x = "Survey Year", y = "Gender Pay Gap") +
   # Adjust the legend position and appearance
-  theme(legend.position = c(0.5, 0.16), 
+  theme(legend.position = c(0.8, 0.8), 
         legend.background = element_rect(color = "black"),
         legend.text = element_text(size = 13),
         legend.key.size = unit(1.2, "lines"))
