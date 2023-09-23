@@ -1,3 +1,11 @@
+#Group6 r file #######################
+#please note this code takes a very long time to run and hitting source may not be the best option, proceed with upto linear regressino then cntrl + enter thereinafter
+#furthermore, code is repeated for j/k and l surveys, it is very similar bar slightly different definition of variables in middle year (k)
+#make sure laptop is plugged in or running on desktop
+#takes approx 45 min for whole code to run 
+#due to post double, partialling out, and principal component on 1000 variables, it is also much faster if load in (j/k/l) data but drop box has orignial files
+
+####################################### start
 ####-----
 rm(list=ls())
 setwd("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls")
@@ -33,18 +41,18 @@ library(plm)
 set.seed(12345)
 ##### read data --------
 #uncomment if first time
-#data <- read_dta("j_indresp.dta")
-#data <- zap_labels(data)
-#data <- as.data.frame(data)
-#save(data, file = "jdata.Rda")
+data <- read_dta("j_indresp.dta") #read orig file
+data <- zap_labels(data) # remove stata labels etc
+data <- as.data.frame(data) #ditto
+save(data, file = "jdata.Rda") #makes life easier
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/jdata.Rda")
 #####
-data %<>% filter(j_ivfio == 1 & j_ioutcome == 11 & j_basrate > 0  & j_paynu_dv>0 & j_dvage>0&j_jbft_dv==1&j_jbstat %in% c(2,12,13)) 
-data %<>% select(-starts_with(c("j_ovtr")))
-names(data)[names(data) == "pidp"] <- "individual"
-data %<>% select(-contains(c("pid")))
-data %<>% select(-starts_with(c("j_ind")))
-data <- data[,-(2:12)]
+data %<>% filter(j_ivfio == 1 & j_ioutcome == 11 & j_basrate > 0  & j_paynu_dv>0 & j_dvage>0&j_jbft_dv==1&j_jbstat %in% c(2,12,13)) #full outcome x2, both income variables pos, full time workers or furlough
+data %<>% select(-starts_with(c("j_ovtr"))) #remove overtime - too good predictor 
+names(data)[names(data) == "pidp"] <- "individual" #change identifier
+data %<>% select(-contains(c("pid"))) #remove identifier variables
+data %<>% select(-starts_with(c("j_ind"))) #remove weighting varibales 
+data <- data[,-(2:12)] #remove misc variabels 
 
 #conventional dummies
 data$j_nchild_dv1 <-ifelse(data$j_nchild_dv>0,1,0) #how many children
@@ -79,9 +87,9 @@ data <- mutate(data,
 data$female <- ifelse(data$j_sex == 2, 1, 0) #female
 data$j_basrate <- log(data$j_basrate) #log pay var
 data$j_paynu_dv <- log(data$j_paynu_dv) #log alt pay var
-data$date <- paste(data$j_istrtdatd, data$j_istrtdatm, data$j_istrtdaty, sep = "/")
+data$date <- paste(data$j_istrtdatd, data$j_istrtdatm, data$j_istrtdaty, sep = "/") #date variable
 data$date <- dmy(data$date)
-data$covid<- ifelse(data$date>"2020-03-23", 1,0)
+data$covid<- ifelse(data$date>"2020-03-23", 1,0) #covid structural break dummy
 data = select(data, -1,-17:-23, ) #remove id var
 data %<>% select(-(c("j_jbnssec8_dv", "j_sex","j_sex_dv"))) #remove highly related vars
 data %<>% select(-contains(c("j_jbnssec3","j_jbnssec5", "jbsoc00_cc"))) #ditto
@@ -125,6 +133,7 @@ data$j_bensta2 <- ifelse(data$j_bensta2>0&data$j_bensta2==1,1,0) #educ grant
 data$j_nchild_dv2 <- ifelse(data$j_nchild_dv>0, data$j_nchild_dv^2,0) #number of children sqr
 data$j_scsf1 <- ifelse(data$j_scsf1>3, 1,0) #health is fair or poor
 
+#following not really necessary in the end 
 # Identify variables with more than 50% missing values
 data[data < 0] <- NA
 missing_prop <- colMeans(is.na(data))
@@ -144,12 +153,12 @@ for (var in vars_to_remove) {
   data[[var]] <- fct_na_value_to_level(data[[var]], "0")
 }
 
-rm(var)
+rm(var) #remove misc var
 
 data[is.na(data)] <- 0
 
-quantile(data$j_basrate, 0.01)
-quantile(data$j_basrate, 0.99)
+quantile(data$j_basrate, 0.01) #topcode
+quantile(data$j_basrate, 0.99) #bttomcode 
 data %<>% filter(j_basrate> 1.8164521& j_basrate<3.217146)
 
 save(data, file = "jjdata.Rda")
@@ -157,11 +166,11 @@ save(data, file = "jjdata.Rda")
 
 # linear regression --------
 
-OLS1<-lm(j_basrate ~ female, data)
+OLS1<-lm(j_basrate ~ female, data) #raw 
 summary(OLS1)
 
 # run OLS regression with all
-OLS2<-lm(j_basrate ~ female + ., data)
+OLS2<-lm(j_basrate ~ female + ., data) 
 summary(OLS2)
 
 #conventional controls
@@ -186,11 +195,11 @@ con = model.matrix(~-1 + female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 +
                                    j_hiqual_dv + j_jbstatp + j_jbstatf + j_jbsizes  + j_jbsizel + 
                                    j_tujbpl + j_marstat_dv + j_jbnssec8_dvhiman + j_jbnssec8_dvhiprof + j_jbnssec8_dvlowma +
                                    j_jbnssec8_dvrout+covid), data = data)
-con <- con[, which(apply(con, 2, var) != 0)]
-con = apply(con, 2, function(x) scale(x, center = TRUE, scale = FALSE))
-dim(con)
+con <- con[, which(apply(con, 2, var) != 0)] #removes zero variance
+con = apply(con, 2, function(x) scale(x, center = TRUE, scale = F)) #scale and center - scale doesnt make diff 
+dim(con) #how many varibales 
 index.female <- grep("female", colnames(con))
-x=con[,-1] 
+x=con[,-1] #all conventinoal minus female 
 y <- data$j_basrate
 d <- data$female
 
@@ -314,7 +323,7 @@ factprint=cbind(fact_coef,fact_se,fact_aic,fact_aicc)
 factprint[numfact,1:2]
 
 #sensitivity analysis -----
-OLS1<-lm(j_paynu_dv ~ female, data)
+OLS1<-lm(j_paynu_dv ~ female, data) # alt income variable 
 summary(OLS1)
 #conventional controls
 OLS3<-lm(j_paynu_dv ~ female+(j_nchild_dv1 + j_ukborn + j_dvage + j_dvage2 + 
@@ -365,14 +374,14 @@ d <- data$female
 ylasso11 <- rlassoEffect(x=x,y=y,d=d,method="double selection")
 summary(ylasso11)
 
-# 2019/20 k  -----
+# 2019/20 k  ----- exact same again but diff prefix, skip to bottom for tables and graphs
 rm(list=ls())
 ##### read data --------
 #uncomment if first time
-#data <- read_dta("k_indresp.dta")
-#data <- zap_labels(data)
-#data <- as.data.frame(data)
-#save(data, file = "kdata.Rda")
+data <- read_dta("k_indresp.dta")
+data <- zap_labels(data)
+data <- as.data.frame(data)
+save(data, file = "kdata.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/kdata.Rda")
 #####
 data %<>% filter(k_ivfio == 1 & k_ioutcome == 11 & k_basrate > 0  & k_paynu_dv>0 & k_dvage>0&k_jbft_dv==1&k_jbstat %in% c(2,12,13)) 
@@ -704,10 +713,10 @@ summary(ylasso11)
 rm(list=ls())
 ##### read data --------
 #uncomment if first time
-#data <- read_dta("l_indresp.dta")
-#data <- zap_labels(data)
-#data <- as.data.frame(data)
-#save(data, file = "ldata.Rda")
+data <- read_dta("l_indresp.dta")
+data <- zap_labels(data)
+data <- as.data.frame(data)
+save(data, file = "ldata.Rda")
 load("C:/R folder/EC DS/Misc/UKDS 2020/6614stata_54BAB6F89E00B73D09078E3AA069E59E09CABADF507F71FB415420400843987A_V1/UKDA-6614-stata/stata/stata13_se/ukhls/ldata.Rda")
 #####
 data %<>% filter(l_ivfio == 1 & l_ioutcome == 11 & l_basrate > 0  & l_paynu_dv>0 & l_dvage>0&l_jbft_dv==1&l_jbstat %in% c(2,12,13)) 
